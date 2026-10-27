@@ -1,0 +1,1916 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Комплексная защита бизнеса</title>
+<style>
+/* ───────────────────────────────────────────────────────────────
+   Все значения — из исходников Core Components (core-ds/core-components,
+   master e6e25f66, светлая тема, desktop): packages/vars, typography,
+   button, form-control, select, checkbox, radio, tag, status, link,
+   steps, plate, divider, modal, universal-modal, side-panel, code-input,
+   toast-plate, icon-button, number-input. Пакет в статический прототип
+   не подключён, поэтому классы повторяют вёрстку компонентов буквально.
+   Раскладка экранов — по макетам «[W] Страхование · Витрина и
+   оформление ДМС [23.10]» (stand-alone страхование).
+   ─────────────────────────────────────────────────────────────── */
+:root{
+  color-scheme:light;
+  /* text */
+  --text-primary:rgba(3,3,6,.88);
+  --text-primary-hover:rgba(1,1,12,.63);
+  --text-primary-press:rgba(4,4,19,.55);
+  --text-secondary:rgba(4,4,19,.55);
+  --text-secondary-hover:rgba(1,1,12,.63);
+  --text-tertiary:rgba(5,8,29,.38);
+  --text-inverted:rgba(255,255,255,.94);
+  --text-positive:#0d9336;
+  --text-attention:#ea8313;
+  --text-negative:#ec2d20;
+  /* accent / graphite */
+  --accent:#ef3124; --accent-hover:#e32a17; --accent-press:#d72505;
+  --graphite:#212124; --graphite-hover:#2f2f32; --graphite-press:#353539;
+  /* status */
+  --status-positive:#0cc44d;
+  --status-negative:#ff4837;
+  --status-muted-alt-green:#d1f1d7;
+  --status-muted-negative:#ffebeb;
+  /* backgrounds */
+  --bg-primary:#fff;
+  --bg-secondary:#f2f3f5;           /* base-bg-secondary, modal-bg-alt */
+  --toast-bg:#1c1c1e;               /* modal-bg-primary-inverted */
+  --neutral-300:#e7e8eb; --neutral-press:#dcdde1; --neutral-400:#d2d3d9;
+  --nt100:rgba(38,55,88,.06);
+  --nt200:rgba(30,43,68,.08);
+  --nt300:rgba(15,25,55,.1);
+  --nt300-hover:rgba(5,12,41,.14);
+  --nt300-press:rgba(5,11,44,.18);
+  --nt500:rgba(9,12,37,.28);
+  --nt700:rgba(4,4,21,.47);
+  --line:var(--neutral-300);        /* разделитель строк внутри плашек */
+  --backdrop:rgba(0,0,0,.6);
+  --focus:#2288fa;
+  --shadow-m:0 20px 24px rgba(0,0,0,.08),0 12px 16px rgba(0,0,0,.04),0 4px 8px rgba(0,0,0,.04),0 0 1px rgba(0,0,0,.04);
+  /* прототипная графика, вне кита */
+  --client-logo:#C4F04A; --client-logo-ink:#1E2A08;
+  --avatar-a:#F0A6A0; --avatar-b:#C87F76;
+  --art-1:#DDE6F5; --art-2:#B9CCEB;
+  --font-system:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Helvetica,sans-serif;
+  --gap-0:0px; --gap-2:2px; --gap-4:4px; --gap-6:6px; --gap-8:8px;
+  --gap-10:10px; --gap-12:12px; --gap-16:16px; --gap-20:20px; --gap-24:24px;
+  --gap-28:28px; --gap-32:32px; --gap-40:40px; --gap-48:48px; --gap-56:56px; --gap-64:64px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-secondary);font-family:var(--font-system);color:var(--text-primary);-webkit-font-smoothing:antialiased;font-size:16px;line-height:24px}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit;font-size:inherit;line-height:inherit;padding:0;text-align:left}
+input,select{font-family:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input:focus-visible,select:focus-visible{outline:none}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+h1,h2,h3,h4,p,ul,ol{margin:0}
+ul,ol{padding:0;list-style:none}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* ── Typography (font='system') ───────────────────────────────── */
+.t-h1{font-size:40px;line-height:48px;font-weight:700}   /* Title view=large */
+.t-h2{font-size:30px;line-height:36px;font-weight:700}   /* Title view=medium */
+.t-h3{font-size:22px;line-height:26px;font-weight:700}   /* Title view=small */
+.t-h4{font-size:18px;line-height:22px;font-weight:700}   /* Title view=xsmall */
+.t-lg{font-size:18px;line-height:24px}                   /* Text primary-large */
+.t-md{font-size:16px;line-height:24px}                   /* Text primary-medium */
+.t-sm{font-size:14px;line-height:20px}                   /* Text primary-small */
+.t-comp{font-size:16px;line-height:20px}                 /* Text component-primary */
+.sec{color:var(--text-secondary)}
+.pos{color:var(--text-positive)}.strong{font-weight:700}.sub{margin-top:4px}
+.cell__r b,.cell__r span,.srow b,.opt__r,.amount,.pcard__facts b,.tv__v,.tag em,.psec b em,.stepper input,.code__cell{font-variant-numeric:tabular-nums}
+
+/* ── Button ───────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;min-width:88px;padding:0 19px;border:1px solid transparent;border-radius:10px;font-size:14px;line-height:20px;font-weight:500;white-space:nowrap;text-align:center;transition:background-color .2s ease,border-color .2s ease,color .2s ease}
+.btn--48{min-height:48px;min-width:104px;padding:0 23px;font-size:16px;line-height:20px;gap:8px}
+.btn--56{min-height:56px;min-width:128px;padding:0 27px;border-radius:12px;font-size:16px;line-height:20px;gap:8px}
+.btn--addon{padding-left:15px}
+.btn--48.btn--addon{padding-left:19px}
+.btn__icon{width:16px;height:16px;flex:none}
+.btn--accent{background:var(--accent);color:var(--text-inverted)}
+.btn--accent:hover{background:var(--accent-hover)}
+.btn--accent:active{background:var(--accent-press)}
+.btn--primary{background:var(--graphite);color:var(--text-inverted)}
+.btn--primary:hover{background:var(--graphite-hover)}
+.btn--primary:active{background:var(--graphite-press)}
+.btn--secondary{background:var(--nt300);color:var(--text-primary)}
+.btn--secondary:hover{background:var(--nt300-hover)}
+.btn--secondary:active{background:var(--nt300-press)}
+.btn--transparent{background:transparent;color:var(--text-primary)}
+.btn--transparent:hover{background:var(--nt100)}
+.btn--transparent:active{background:var(--nt200)}
+.btn:disabled{background:var(--nt100);color:var(--text-tertiary);cursor:not-allowed}
+.btn--transparent:disabled{background:transparent}
+/* IconButton (view=primary, transparentBg) */
+.ibtn{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:10px;color:var(--text-primary);transition:background-color .2s ease,color .2s ease}
+.ibtn:hover{background:var(--nt100);color:rgba(2,2,10,.76)}
+.ibtn:active{background:var(--nt200)}
+.ibtn svg{width:24px;height:24px}
+.ibtn--48{width:48px;height:48px;border-radius:50%}
+.ibtn--secondary{color:var(--nt700)}
+.ibtn--secondary:hover{color:var(--text-secondary)}
+
+/* Канал показа прототипа — служебный переключатель, Tag 32 */
+.chan{display:inline-flex;gap:var(--gap-4);flex:none}
+.chan button{position:relative}
+
+/* ── Tag (view=filled, rounded) ───────────────────────────────── */
+.tag{display:inline-flex;align-items:center;justify-content:center;min-height:32px;min-width:52px;padding:0 12px;border:1px solid transparent;border-radius:99px;background:var(--nt300);color:var(--text-primary);font-size:14px;line-height:20px;font-weight:400;white-space:nowrap;transition:background-color .2s ease,color .2s ease}
+.tag:hover{background:var(--nt300-hover)}
+.tag:active{background:var(--nt300-press)}
+.tag[aria-pressed="true"]{background:var(--graphite);border-color:var(--graphite);color:var(--text-inverted)}
+.tag[aria-pressed="true"]:hover{background:var(--graphite-hover)}
+.tag--40{min-height:40px;min-width:64px}
+.tags{display:flex;gap:var(--gap-8);flex-wrap:wrap}
+
+/* ── Status (view=muted-alt, size 20, rectangular) ────────────── */
+.status{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:6px;font-size:12px;line-height:16px;font-weight:500;white-space:nowrap;background:var(--nt300);color:var(--text-secondary)}
+.status--24{height:24px;padding:0 12px}
+.status--green{background:var(--status-muted-alt-green);color:var(--text-positive)}
+
+/* ── FormControl / Input / Select: size 56, labelView=inner ───── */
+.field{position:relative;display:flex;align-items:stretch;min-height:56px;border-radius:8px;background:var(--nt300);transition:background-color .2s ease,box-shadow .2s ease}
+.field:hover{background:var(--nt100)}
+.field:focus-within{background:var(--bg-primary);box-shadow:inset 0 0 0 2px var(--nt700)}
+.field label{position:absolute;left:12px;right:12px;overflow:hidden;text-overflow:ellipsis;top:28px;transform:translateY(-50%);transform-origin:left top;font-size:16px;line-height:20px;color:var(--text-secondary);white-space:nowrap;pointer-events:none;transition:transform .2s cubic-bezier(.25,.1,.25,1),margin-top .2s cubic-bezier(.25,.1,.25,1)}
+.field:focus-within label,.field:has(input:not(:placeholder-shown)) label,.field--select label{transform:translateY(-100%) scale(.875);margin-top:1px;right:calc(12px - 12.5%)}
+.field input,.field select{flex:1;min-width:0;width:100%;border:0;margin:0;background:none;padding:28px 12px 8px;outline:none;appearance:none;-webkit-appearance:none;font-size:16px;line-height:20px;color:var(--text-primary);caret-color:var(--text-primary);border-radius:inherit}
+.field input::placeholder{color:transparent}
+.field:focus-within input::placeholder{color:var(--text-tertiary)}
+.field--select select{padding-right:48px;cursor:pointer}
+.field--select::after{content:"";position:absolute;right:12px;top:50%;width:24px;height:24px;margin-top:-12px;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.3 9.3 12 15l5.7-5.7-1.4-1.4L12 12.2 7.7 7.9z' fill='rgba(4,4,21,.47)'/%3E%3C/svg%3E") center/24px no-repeat;transition:opacity .2s ease}
+.field--select:hover::after{opacity:.7}
+.field--err{background:var(--nt200);box-shadow:inset 0 0 0 2px var(--status-negative)}
+.field--err:hover{background:var(--nt200)}
+.field--err:focus-within{background:var(--bg-primary);box-shadow:inset 0 0 0 2px var(--status-negative)}
+.field__sub{margin-top:6px;font-size:14px;line-height:18px;color:var(--text-secondary)}
+.field__err{margin-top:6px;font-size:14px;line-height:18px;color:var(--text-negative)}
+.field__addons{display:flex;align-items:center;gap:4px;padding:0 12px;margin-left:-12px}
+.field__addons svg{width:24px;height:24px;color:var(--nt700)}
+/* Stepper (NumberInput): плашка в правом аддоне */
+.stepper{display:flex;align-items:center;height:40px;margin-right:-4px;border-radius:6px;background:var(--bg-primary)}
+.field:focus-within .stepper{background:var(--nt200)}
+.stepper button{width:40px;height:40px;display:grid;place-items:center;color:var(--nt700);border-radius:6px;transition:color .2s ease}
+.stepper button:hover{color:var(--text-secondary)}
+.stepper button:disabled{color:var(--nt300);cursor:not-allowed}
+.stepper button svg{width:24px;height:24px}
+.stepper i{width:1px;height:18px;background:var(--nt300)}
+.field--number input{-moz-appearance:textfield}
+/* AmountInput: значение bold, валюта сразу за числом (withSuffix), отказ ввода — вспышка фона */
+.field--amount input{font-weight:700}
+.field__suffix{position:absolute;left:12px;right:12px;top:28px;display:none;align-items:center;white-space:pre;font-size:16px;line-height:20px;pointer-events:none;overflow:hidden}
+.field--amount.is-filled .field__suffix,.field--amount:focus-within .field__suffix{display:flex}
+.field__suffix b{font-weight:700;color:var(--text-primary)}
+.field__suffix span{color:var(--text-secondary)}
+.field--amount.is-filled input{-webkit-text-fill-color:transparent}
+.field--amount:focus-within input{-webkit-text-fill-color:currentColor}
+.field--amount:focus-within .field__suffix b{opacity:0}
+.field--reject0{animation:reject0 .3s ease 1}
+.field--reject1{animation:reject1 .3s ease 1}
+@keyframes reject0{from{background-color:var(--status-muted-negative)}}
+@keyframes reject1{from{background-color:var(--status-muted-negative)}}
+.field--number input::-webkit-inner-spin-button,.field--number input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+
+/* ── Checkbox / Radio: size 20 ────────────────────────────────── */
+.chk{width:16px;height:16px;margin:2px;flex:none;display:grid;place-items:center;border:1.5px solid var(--nt700);border-radius:4px;background:var(--bg-primary);color:var(--text-inverted);transition:background-color .2s ease,border-color .2s ease}
+.chk svg{width:10px;height:8px;display:none}
+.chk.is-on{background:var(--graphite);border-color:transparent}
+.chk.is-on svg{display:block}
+.check{display:flex;gap:8px;align-items:flex-start;width:100%;font-size:16px;line-height:20px;color:var(--text-primary)}
+.check:hover .chk:not(.is-on){background:var(--neutral-300)}
+.check:hover .chk.is-on{background:var(--graphite-hover)}
+.check__more{margin:4px 0 0 28px;display:block}
+.module-choice{appearance:none;-webkit-appearance:none;width:16px;height:16px;flex:none;margin:2px;border:1.5px solid var(--nt700);border-radius:4px;background:var(--bg-primary);cursor:pointer;transition:background-color .2s ease,border-color .2s ease}
+.module-choice:hover{background-color:var(--neutral-300)}
+.module-choice:active{background-color:var(--neutral-press)}
+.module-choice:checked{border-color:transparent;background-color:var(--graphite)}
+.module-choice:checked:hover{background-color:var(--graphite-hover)}
+.module-choice--check:checked{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 8'%3E%3Cpath d='M10 1.5 3.5 8 0 4.5 1.5 3l2 2 5-5L10 1.5Z' fill='rgba(255,255,255,.94)'/%3E%3C/svg%3E");background-position:center;background-size:10px 8px;background-repeat:no-repeat}
+.module-choice--radio{border-radius:50%}
+.module-choice--radio:checked{background-image:radial-gradient(circle,rgba(255,255,255,.94) 0 3px,transparent 3.5px)}
+.module-choice:disabled{border-color:var(--nt300);background-color:var(--bg-primary);cursor:not-allowed}
+.module-choice:disabled:checked{background-color:var(--nt200)}
+
+/* ── Link ─────────────────────────────────────────────────────── */
+.lnk{display:inline;padding:0;color:var(--text-primary);text-decoration:none;font:inherit;border-bottom:1px solid currentColor;transition:color .2s ease,border-color .2s ease;cursor:pointer}
+.lnk:hover{color:var(--text-primary-hover);border-bottom-color:transparent}
+.lnk:active{color:var(--text-primary-press);border-bottom-color:transparent}
+.lnk--pseudo{border-bottom-style:dashed}
+.lnk--secondary{color:var(--text-secondary)}
+.lnk--secondary:hover{color:var(--text-secondary-hover)}
+
+/* ── Plate (view=common, rounded) — системное пояснение ───────── */
+.note{padding:12px;border-radius:16px;border:1px solid var(--nt700);background:var(--nt200);font-size:14px;line-height:20px;color:var(--text-primary)}
+.note>*{display:block;padding:0 12px 4px 4px}
+.note b{font-weight:700}
+
+/* Маркер списка «что покрывает»: CheckmarkM, status-positive */
+.mk{width:24px;height:24px;flex:none;display:grid;place-items:center;color:var(--status-positive)}
+.mk svg{width:16px;height:16px}
+.list{display:flex;flex-direction:column;gap:var(--gap-12)}
+.list li{display:flex;align-items:flex-start;gap:var(--gap-12);font-size:16px;line-height:24px}
+.list li>span{min-width:0}
+.list small{display:block;font-size:14px;line-height:20px;color:var(--text-secondary)}
+
+.card{background:var(--bg-primary);border-radius:16px}
+/* Иллюстрации карточек: в макете 3D-рендеры, здесь плоские заглушки той же геометрии */
+.aw{fill:#fff}.aws{stroke:#fff}.a1{fill:var(--art-1)}.a2{fill:var(--art-2)}.a3{fill:var(--status-positive)}
+
+/* PureCell: строки с разделителем, без рамок */
+.cells{display:flex;flex-direction:column}
+.cell{display:flex;align-items:center;gap:16px;width:100%;padding:12px 0;border-top:1px solid var(--line)}
+.cell:first-child{border-top:0;padding-top:0}
+.cells--last .cell:last-child{padding-bottom:0}
+.cell__main{flex:1;min-width:0}
+.cell__t{font-size:16px;line-height:20px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0}
+.cell__s{font-size:14px;line-height:20px;color:var(--text-secondary);margin-top:2px}
+.cell__r{text-align:right;white-space:nowrap}
+.cell__r b{display:block;font-size:16px;line-height:20px;font-weight:500}
+.cell__r span{display:block;font-size:14px;line-height:20px;color:var(--text-secondary)}
+/* TableView :: Horizontal, compact */
+.tv{display:flex;flex-direction:column}
+.tv__row{display:grid;grid-template-columns:minmax(200px,240px) minmax(0,1fr);gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px;line-height:24px}
+.tv__row:first-child{padding-top:0}
+.tv__row:last-child{border-bottom:0;padding-bottom:0}
+.tv__k{color:var(--text-secondary)}
+.tv__v{font-weight:500}
+/* Amount: целая часть bold, копейки и валюта .6 */
+.amount{white-space:nowrap}
+.amount small{font-size:inherit;font-weight:400;opacity:.6}
+
+/* ── НИБ · оболочка (SideMenu 248 + Body) ─────────────────────── */
+.nib{position:relative;display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--bg-secondary)}
+.side{background:var(--bg-primary);padding:16px 12px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;align-self:start;height:100vh;overflow:auto;scrollbar-width:thin}
+.side__logo{display:flex;align-items:center;gap:10px;padding:8px 8px 20px;font-size:16px;line-height:20px;font-weight:700}
+.side__logo i{width:28px;height:28px;border-radius:8px;background:var(--accent);display:grid;place-items:center;color:var(--text-inverted);font-style:normal;font-weight:700;font-size:15px}
+.side ul{display:flex;flex-direction:column;gap:2px}
+.side li{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:8px;font-size:14px;line-height:20px;color:var(--text-primary)}
+.side li svg{width:20px;height:20px;flex:none;color:var(--text-secondary)}
+.side li.is-on{background:var(--nt300);font-weight:500}
+.side li.is-on svg{color:var(--text-primary)}
+.side hr{border:0;border-top:1px solid var(--line);margin:8px 12px}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:16px;height:64px;padding:0 48px;background:var(--bg-primary);position:sticky;top:0;z-index:30}
+.top__back{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0 12px 0 4px;margin-left:-4px;border-radius:10px;font-size:14px;line-height:20px;font-weight:500;color:var(--text-primary);transition:background-color .2s ease}
+.top__back:hover{background:var(--nt100)}
+.top__back svg{width:24px;height:24px}
+.top__spacer{margin-left:auto}
+.top__client{display:flex;align-items:center;gap:12px}
+.top__logo{width:32px;height:32px;border-radius:8px;background:var(--client-logo);display:grid;place-items:center;font-weight:700;color:var(--client-logo-ink);font-size:14px}
+.top__client b{display:block;font-size:14px;line-height:18px;font-weight:700}
+.top__client span{display:block;font-size:12px;line-height:16px;color:var(--text-secondary)}
+.top__role{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px 0 4px;border-radius:99px;background:var(--graphite);color:var(--text-inverted);font-size:12px;line-height:16px;font-weight:500}
+.top__role i{width:24px;height:24px;border-radius:50%;background:linear-gradient(140deg,var(--avatar-a),var(--avatar-b));display:block}
+.body{padding:40px 48px 64px;flex:1}
+.page{width:100%;max-width:1248px;margin-inline:auto;display:flex;flex-direction:column;gap:32px}
+/* TitleView: заголовок + подзаголовок с отступом 8 */
+.page__hd{display:flex;flex-direction:column}
+.page__hd>p{padding-top:8px;color:var(--text-secondary)}
+.page__hd>p+p{padding-top:4px}
+
+/* ── Витрина: grid 2×2, gap 24; NavigationCardView 612×276 ────── */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.sect{display:flex;flex-direction:column;gap:16px}
+.pcard{position:relative;display:flex;padding:28px;min-height:276px;overflow:hidden}
+.pcard--wide{grid-column:1 / -1}
+.pcard__body{position:relative;z-index:1;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:20px;padding-right:140px}
+.pcard__hd{display:flex;flex-direction:column;gap:8px}
+.pcard__facts{display:flex;gap:24px;flex-wrap:wrap}
+.pcard__facts div{display:flex;flex-direction:column}
+.pcard__facts span{font-size:14px;line-height:20px;color:var(--text-secondary)}
+.pcard__facts b{font-size:16px;line-height:24px;font-weight:400}
+.pcard__cta{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+.pcard__cta .btn--secondary{margin-right:4px}
+.pcard__art{position:absolute;right:28px;top:50%;transform:translateY(-50%);width:156px;display:grid;place-items:center;pointer-events:none}
+.pcard__art svg{width:120px;height:120px}
+.pcard--wide .pcard__body{padding-right:220px}
+.pcard--wide .pcard__art{width:220px}
+.pcard--wide .pcard__art svg{width:156px;height:156px}
+
+/* Один вход в комплексную защиту; детали и расчёт открываются на следующем экране. */
+.package-entry{position:relative;width:100%}
+.package-entry__hit{position:absolute;inset:0;z-index:2;width:100%;height:100%;border-radius:16px}
+.package-entry__hit:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.package-entry:hover .package-entry__action{background:var(--nt300-hover)}
+.package-entry .pcard__hd{max-width:760px}
+.package-entry__action{pointer-events:none}
+.package-landing__head{max-width:840px}
+.package-benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap-24)}
+.package-benefit{min-width:0;padding:var(--gap-24);display:flex;flex-direction:column;gap:var(--gap-8)}
+.package-benefit__head{display:flex;align-items:center;justify-content:space-between;gap:var(--gap-12)}
+.package-benefit__head svg{width:48px;height:48px;flex:none}
+.package-benefit__head .benefit-people{width:48px;height:48px;display:grid;place-items:center;color:var(--text-secondary)}
+.package-benefit__head .benefit-people svg{width:32px;height:32px}
+.package-benefit p{font-size:14px;line-height:20px;color:var(--text-secondary)}
+.module-list{display:flex;flex-direction:column}
+.module-item+.module-item{border-top:1px solid var(--line)}
+.module-item__head{display:flex;align-items:center;gap:var(--gap-12);padding-block:var(--gap-12)}
+.module-item:first-child .module-item__head{padding-top:0}
+.module-item__select{width:44px;min-height:44px;margin-left:-12px;flex:none;display:grid;place-items:center;cursor:pointer}
+.module-item__toggle{display:flex;align-items:center;gap:var(--gap-16);flex:1;min-width:0;min-height:48px}
+.module-item__toggle .cell__main{min-width:0}
+.module-item__toggle .cell__s{display:block}
+.module-item__toggle .cell__r{margin-left:auto;flex:none}
+.module-item__arrow{width:24px;height:24px;flex:none;color:var(--nt700);transition:transform .15s ease-in-out}
+.module-item__arrow svg{width:24px;height:24px}
+.module-item__toggle[aria-expanded="true"] .module-item__arrow{transform:rotate(180deg)}
+.module-item__toggle:hover .cell__t{color:var(--text-primary-hover)}
+.module-item__body{padding:0 0 var(--gap-24) var(--gap-32);display:flex;flex-direction:column;gap:var(--gap-24)}
+.module-item__body[hidden]{display:none}
+.module-controls{display:flex;flex-direction:column;gap:var(--gap-24)}
+.module-controls fieldset{border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:var(--gap-24)}
+.module-controls fieldset:disabled .opt{cursor:not-allowed}
+.module-controls fieldset:disabled .opt__t,.module-controls fieldset:disabled .opt__r{color:var(--text-secondary)}
+.module-controls .opt{cursor:pointer}
+.module-controls .opt__t,.module-controls .opt__s{display:block}
+.module-coverage summary{display:inline;cursor:pointer;list-style:none;font-size:14px;line-height:20px;color:var(--text-primary);border-bottom:1px dashed currentColor;transition:color .2s ease,border-color .2s ease}
+.module-coverage summary::-webkit-details-marker{display:none}
+.module-coverage summary:hover{color:var(--text-primary-hover);border-bottom-color:transparent}
+.module-coverage .list{padding-top:var(--gap-16)}
+
+/* SFA не копирует клиентскую витрину: менеджеру нужны одна
+   рекомендация, её обоснование и следующее действие. */
+.sfa-reco{border-radius:16px;background:var(--bg-secondary);overflow:hidden}
+.sfa-reco__head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--gap-16);padding:var(--gap-24)}
+.sfa-reco__head>div{display:flex;flex-direction:column;gap:var(--gap-8);max-width:720px}
+.sfa-reco__head p{color:var(--text-secondary)}
+.sfa-reco__body{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:var(--gap-8);padding:0 var(--gap-8) var(--gap-8)}
+.sfa-reco__main,.sfa-reco__aside{background:var(--bg-primary);border-radius:12px;padding:var(--gap-24);display:flex;flex-direction:column;gap:var(--gap-16)}
+.sfa-reco__content{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(320px,1.2fr);gap:var(--gap-24)}
+.sfa-reco__why,.sfa-sales{display:flex;flex-direction:column;gap:var(--gap-12)}
+.sfa-reco__why h3,.sfa-sales h3{font-size:14px;line-height:20px;font-weight:500;color:var(--text-secondary)}
+.sfa-reco__signals,.sfa-sales__list{display:flex;flex-direction:column;gap:var(--gap-12)}
+.sfa-reco__reason,.sfa-sales__item{display:flex;gap:var(--gap-8);font-size:14px;line-height:20px}
+.sfa-reco__reason .mk,.sfa-sales__item .mk{width:20px;height:20px}
+.sfa-reco__reason b{display:block;font-weight:500}
+.sfa-reco__reason span span{display:block;color:var(--text-secondary)}
+.sfa-reco__price{display:flex;flex-direction:column;gap:var(--gap-4)}
+.sfa-reco__price>span{font-size:14px;line-height:20px;color:var(--text-secondary)}
+.sfa-reco__price b{font-size:22px;line-height:26px;font-weight:700}
+.sfa-reco__price small{font-size:14px;line-height:20px;color:var(--text-secondary)}
+.sfa-reco__actions{display:flex;flex-direction:column;gap:var(--gap-8);margin-top:auto}
+.sfa-reco__actions .btn{width:100%}
+
+/* ── Оформление: колонки 824 + 24 + 400 ───────────────────────── */
+.cols{display:grid;grid-template-columns:minmax(0,824px) minmax(0,400px);gap:24px;align-items:start}
+.colmain{display:flex;flex-direction:column;gap:24px;min-width:0}
+.block{padding:32px;border-radius:12px;background:var(--bg-primary);display:flex;flex-direction:column;gap:24px}
+.block__hd{display:flex;flex-direction:column;gap:8px}
+.block__hd p{font-size:16px;line-height:24px;color:var(--text-secondary)}
+.fields{display:flex;flex-direction:column;gap:24px}
+.frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+.frow--addr{grid-template-columns:minmax(0,1fr) 280px 40px;align-items:center}
+.addr-add{align-self:flex-start}
+.hint{font-size:14px;line-height:20px;color:var(--text-secondary)}
+.tag em{font-style:normal;opacity:.7;margin-left:6px}
+/* Правая колонка: только шаги, как в макете */
+.rail{position:sticky;top:88px;display:flex;flex-direction:column;gap:24px}
+.isle{padding:24px;border-radius:12px;background:var(--bg-primary)}
+/* Steps (vertical, ordered) */
+.steps{display:flex;flex-direction:column}
+.step{display:flex;gap:8px}
+.step__ind{display:flex;flex-direction:column;align-items:center;flex:none}
+.step__mark{width:24px;height:24px;margin-top:8px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;line-height:20px;font-weight:700;background:var(--nt300);color:var(--text-primary)}
+.step__mark svg{width:12px;height:12px}
+.step__dash{flex:1;width:2px;min-height:8px;margin-top:8px;border-radius:1px;background:var(--nt300)}
+.step:last-child .step__dash{display:none}
+.step__text{min-height:48px;margin-bottom:8px;padding:8px;font-size:16px;line-height:24px;color:var(--text-primary)}
+.step:last-child .step__text{margin-bottom:0}
+.step.is-now .step__mark{background:rgba(3,3,6,.88);color:var(--text-inverted)}
+.step.is-done .step__mark{background:var(--status-positive);color:#fff}
+.step.is-done .step__dash{background:var(--status-positive)}
+/* Итог под блоками: «Сумма» + Amount, затем Button 56 — как в макете */
+.flow{display:flex;flex-direction:column;gap:24px;padding-top:8px}
+.flow__nums{display:flex;flex-wrap:wrap;gap:16px 32px}
+.flow__num{display:flex;flex-direction:column;gap:4px}
+.flow__num>span{font-size:16px;line-height:20px;color:var(--text-secondary)}
+.flow__num>b{font-size:22px;line-height:26px;font-weight:700}
+.flow__msg{font-size:16px;line-height:24px;color:var(--text-secondary)}
+.actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+/* Сотрудники: ContentCardWrapper, padding 24, gap 16 */
+.staff{display:flex;flex-direction:column;gap:12px}
+.staff__row{position:relative;display:flex;align-items:center;gap:16px;padding:24px;border-radius:16px;background:var(--bg-secondary)}
+.staff__main{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.staff__fio{font-size:18px;line-height:22px;font-weight:700}
+.staff__sub{font-size:14px;line-height:20px;color:var(--text-secondary)}
+.staff__warn{color:var(--text-attention)}
+.staff__empty{padding:16px;border:1px solid var(--line);border-radius:12px;text-align:center;font-size:14px;line-height:20px;color:var(--text-secondary)}
+/* Меню действий строки (Popover + список, как у Select) */
+.menu{position:absolute;right:16px;top:calc(100% - 20px);z-index:10;min-width:200px;padding:8px 0;border-radius:16px;background:var(--bg-primary);box-shadow:var(--shadow-m),inset 0 0 0 1px var(--neutral-300)}
+.menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:12px 16px;font-size:16px;line-height:20px;color:var(--text-primary)}
+.menu button:hover{background:var(--nt100)}
+.menu button:active{background:var(--nt200)}
+.menu svg{width:24px;height:24px;color:var(--nt700)}
+
+/* ── Документы ────────────────────────────────────────────────── */
+.docs{display:flex;flex-direction:column}
+.docs li{display:flex;align-items:center;gap:16px;padding:12px 0;font-size:16px;line-height:20px}
+.docs li:first-child{padding-top:0}
+.docs li:last-child{padding-bottom:0}
+.docs__ico{width:24px;height:24px;flex:none;color:var(--nt700)}
+.docs__ico svg{width:24px;height:24px}
+.docs__name{flex:1;min-width:0}
+.docs__meta{font-size:14px;line-height:20px;color:var(--text-secondary);white-space:nowrap}
+.docs__dl{width:24px;height:24px;flex:none;color:var(--nt500)}
+.docs__dl svg{width:24px;height:24px}
+/* Экран результата — карточка с IconView и Title small */
+.done{display:flex;flex-direction:column;align-items:center;gap:24px;width:100%;max-width:824px}
+.done__card{width:100%;padding:48px 32px;border-radius:12px;background:var(--bg-primary);display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.done__ico{width:48px;height:48px;margin-bottom:16px;border-radius:14px;background:var(--status-positive);display:grid;place-items:center;color:#fff}
+.done__ico svg{width:24px;height:24px}
+.done__card .btn{margin-top:16px}
+.policy{width:100%;padding:32px;border-radius:12px;background:var(--bg-primary);display:flex;flex-direction:column;gap:16px}
+.policy__hd{display:flex;flex-direction:column;gap:4px}
+.psec{display:flex;flex-direction:column;gap:4px;padding:12px 0;border-top:1px solid var(--line)}
+.psec b{display:flex;justify-content:space-between;gap:12px;font-size:16px;line-height:20px;font-weight:500}
+.psec b em{font-style:normal;font-weight:400;white-space:nowrap}
+.psec span{font-size:14px;line-height:20px;color:var(--text-secondary)}
+.sum{display:flex;flex-direction:column;gap:8px}
+.srow{display:flex;justify-content:space-between;gap:12px;font-size:14px;line-height:20px;color:var(--text-secondary)}
+.srow b{color:var(--text-primary);font-weight:400;white-space:nowrap}
+.srow--total{padding-top:12px;margin-top:4px;border-top:1px solid var(--line);font-size:16px;line-height:24px;color:var(--text-primary)}
+.srow--total b{font-weight:700}
+
+/* ── SFA ──────────────────────────────────────────────────────── */
+.sfa{position:relative;display:grid;grid-template-columns:72px minmax(0,1fr);min-height:100vh;background:var(--bg-secondary)}
+.sfa__rail{grid-column:1;grid-row:1;background:var(--bg-primary);padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;border-right:1px solid var(--line);position:sticky;top:0;align-self:start;height:100vh;overflow:auto}
+.sfa__rail b{color:var(--accent);font-weight:700;font-size:15px;margin-bottom:12px}
+.sfa__rail span{font-size:11px;line-height:16px;color:var(--text-secondary);display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;width:100%;border-radius:8px}
+.sfa__rail span svg{width:20px;height:20px}
+.sfa__rail span.is-on{color:var(--text-primary);background:var(--nt300)}
+.sfa__head{display:flex;align-items:center;gap:16px;height:64px;padding:0 24px;background:var(--bg-primary);border-bottom:1px solid var(--line);font-size:14px;line-height:20px;color:var(--text-secondary);position:sticky;top:0;z-index:30}
+.sfa__contact{margin-left:auto}
+.sfa__head b{font-size:16px;line-height:20px;font-weight:700;color:var(--text-primary)}
+.sfa__tabs{display:flex;gap:4px;padding:0 24px;background:var(--bg-primary);border-bottom:1px solid var(--line);position:sticky;top:64px;z-index:29}
+.sfa__tabs span{white-space:nowrap;font-size:16px;line-height:20px;color:var(--text-secondary);padding:14px 12px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.sfa__tabs span.is-on{color:var(--text-primary);border-color:var(--text-primary);font-weight:500}
+.sfa__work{padding:24px}
+.sfa__panel{background:var(--bg-primary);border-radius:12px;padding:32px;display:flex;flex-direction:column;gap:32px;max-width:1100px}
+.prow{display:flex;gap:24px;align-items:flex-start;padding:24px 0;border-top:1px solid var(--line)}
+.prow:first-child{border-top:0;padding-top:0}
+.prow:last-child{padding-bottom:0}
+.prow__main{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.prow__t{font-size:18px;line-height:22px;font-weight:700}
+.prow__btns{display:flex;gap:4px;flex:none}
+.sfa__main{grid-column:2;grid-row:1;min-width:0}
+.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 24px}
+.kv div span{display:block;font-size:14px;line-height:20px;color:var(--text-secondary)}
+.kv div b{display:block;font-size:16px;line-height:24px;font-weight:400}
+.kv--3{grid-template-columns:repeat(3,1fr)}
+.sfa__back{align-self:flex-start}
+
+/* ── Modal (size 500/600): header 28 28 0, title 22/26, content 0 40, footer 24 40 40 ── */
+.dlg__scrim{position:fixed;inset:0;z-index:80;background:var(--backdrop);display:flex;flex-direction:column;align-items:center;padding:40px 16px;overflow:auto}
+.dlg{width:500px;max-width:100%;margin:auto;background:var(--bg-primary);border-radius:24px;display:flex;flex-direction:column;animation:dlg-in .2s ease-in}
+.dlg--600{width:600px}
+@keyframes dlg-in{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:none}}
+.dlg__hd{display:flex;align-items:flex-start;padding:28px 28px 0}
+.dlg__hd h3{flex:1;min-width:0;padding:12px;font-size:22px;line-height:26px;font-weight:700}
+.dlg__x{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:50%;margin-left:auto;color:var(--text-primary);transition:background-color .2s ease}
+.dlg__x:hover{background:var(--nt100)}
+.dlg__x svg{width:24px;height:24px}
+.dlg__body{padding:0 40px;display:flex;flex-direction:column;gap:24px}
+.dlg__body:last-child{padding-bottom:40px}
+.dlg__ft{display:flex;gap:16px;padding:24px 40px 40px}
+/* Код подтверждения: UniversalModal center 600, контент по центру */
+.dlg--code .dlg__hd{padding:20px 20px 0;justify-content:flex-end}
+.dlg--code .dlg__body{padding:0 32px 32px;align-items:center;text-align:center;gap:0}
+.dlg--code h3{font-size:22px;line-height:26px;font-weight:700}
+.dlg--code .code__to{margin-top:12px;font-size:16px;line-height:24px}
+/* CodeInput: ячейки 36×48, gap 8, radius 6, Title medium */
+.code{display:flex;flex-direction:column;align-items:center;margin-top:32px}
+.code__cells{display:flex;gap:8px}
+.code__cell{width:36px;height:48px;flex:none;margin:0;padding:0;border:0;border-radius:6px;background:var(--nt300);text-align:center;font-family:var(--font-system);font-size:30px;line-height:36px;font-weight:700;color:var(--text-primary);caret-color:var(--text-primary);outline:none;appearance:none}
+.code__cell:disabled{color:var(--text-tertiary);opacity:1}
+.code--err .code__cell{background:var(--status-muted-negative);color:var(--text-negative)}
+.code__err{margin-top:8px;font-size:14px;line-height:20px;color:var(--text-negative)}
+.code--shake .code__cells{animation:shake .15s linear 0s 3}
+@keyframes shake{25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+.code__more{margin-top:32px;display:flex;flex-direction:column;align-items:center;gap:16px;font-size:16px;line-height:24px}
+.code__help{margin-top:16px;text-align:left}
+/* ── UniversalModal side 600, фон modal-bg-alt: «Подробнее», «Условия» ── */
+.sp__scrim{position:fixed;inset:0;z-index:70;background:var(--backdrop);display:flex;justify-content:flex-end;align-items:stretch;padding:12px}
+.sp{width:600px;max-width:100%;max-height:100%;background:var(--bg-secondary);border-radius:24px;display:flex;flex-direction:column;overflow:hidden;will-change:transform;animation:sp-in .3s ease-in-out}
+@keyframes sp-in{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+.sp__hd{display:flex;align-items:flex-start;padding:20px 20px 0}
+.sp__hd h3{flex:1;min-width:0;padding:11px 12px;font-size:22px;line-height:26px;font-weight:700}
+.sp__body{flex:1;overflow:auto;padding:0 32px 32px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin}
+.sp__ft{display:flex;align-items:center;gap:16px;padding:16px 32px 32px;background:var(--bg-secondary)}
+.sp__intro{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:0 0 12px}
+.sp__intro svg{width:120px;height:120px;margin-bottom:8px}
+.sp__intro h3{font-size:30px;line-height:36px;font-weight:700}
+.sp__spacer{flex:1}
+.plate{padding:24px;border-radius:16px;background:var(--bg-primary);display:flex;flex-direction:column;gap:16px}
+.plate--tight{padding:12px}
+/* PureCell с графикой слева: иконка 24 в плашке 40 */
+.fact{display:flex;align-items:flex-start;gap:16px;padding:12px}
+.fact__ico{width:40px;height:40px;flex:none;border-radius:12px;background:var(--bg-secondary);display:grid;place-items:center;color:var(--text-primary)}
+.fact__ico svg{width:24px;height:24px}
+.fact__t{display:block;font-size:16px;line-height:20px;margin:2px 0}
+.fact__s{display:block;font-size:14px;line-height:20px;color:var(--text-secondary)}
+.grp{display:flex;flex-direction:column;gap:16px}
+.grp__t{font-size:18px;line-height:22px;font-weight:700}
+/* Опции: radio/checkbox + текст, PureCell */
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;border-radius:12px;transition:background-color .2s ease}
+.opt:hover{background:var(--nt100)}
+.opt .module-choice{margin-top:4px}
+.opt__main{flex:1;min-width:0}
+.opt__t{font-size:16px;line-height:24px}
+.opt__s{font-size:14px;line-height:20px;color:var(--text-secondary);margin-top:2px}
+.opt__r{font-size:16px;line-height:24px;white-space:nowrap;text-align:right}
+.opt__r small{display:block;font-size:14px;line-height:20px;color:var(--text-secondary);text-align:right}
+.opts{display:flex;flex-direction:column;margin:0 -12px}
+/* ToastPlate (default): #1c1c1e, radius 12, padding 16, closer 56 */
+.toast{position:fixed;top:80px;right:24px;z-index:90;display:flex;align-items:center;gap:12px;min-height:56px;max-width:420px;padding:16px 56px 16px 16px;border-radius:12px;background:var(--toast-bg);color:var(--text-inverted);font-size:16px;line-height:20px;box-shadow:var(--shadow-m);animation:dlg-in .2s ease-in}
+.toast__badge{width:20px;height:20px;flex:none;border-radius:50%;background:var(--status-positive);display:grid;place-items:center;color:#fff}
+.toast__badge svg{width:12px;height:12px}
+.toast__x{position:absolute;top:4px;bottom:4px;right:4px;width:48px;display:grid;place-items:center;color:var(--text-inverted);border-radius:10px}
+.toast__x:hover{background:rgba(255,255,255,.08)}
+.toast__x svg{width:24px;height:24px}
+
+@media (max-width:1280px){
+  .cols{grid-template-columns:1fr}.rail{position:static;order:-1}
+  .rail .steps{flex-direction:row;flex-wrap:wrap;gap:0 8px}
+  .rail .step__dash{display:none}
+  .rail .step__text{min-height:0;margin-bottom:0}
+  .nib{grid-template-columns:1fr}.side{display:none}.top,.body{padding-left:24px;padding-right:24px}
+  .frow--addr{grid-template-columns:minmax(0,1fr) 220px 40px}
+}
+@media (max-width:1100px){
+  .prow{flex-wrap:wrap}
+  .prow__btns{flex:1 1 100%}
+  .sfa__okved,.sfa__contact{display:none}
+  .sfa__head .chan{margin-left:auto}
+}
+/* Core Components: TitleResponsive и мобильные кнопки ниже 1024 */
+@media (max-width:1023px){
+  .t-h1{font-size:30px;line-height:36px;font-weight:600}
+  .t-h2{font-size:26px;line-height:32px;font-weight:600}
+  .t-h3{font-size:20px;line-height:28px;font-weight:600}
+  .t-h4,.staff__fio,.grp__t,.prow__t{font-size:16px;line-height:20px;font-weight:600}
+  .btn{border-radius:12px}
+  .btn--56{border-radius:16px}
+  .btn--secondary{background:var(--nt100)}
+  .btn--secondary:active{background:var(--nt300-hover)}
+  .field{border-radius:10px}
+  .nib .grid{grid-template-columns:1fr}
+  .package-benefits{grid-template-columns:1fr;gap:var(--gap-16)}
+  .sfa-reco__body{grid-template-columns:1fr}
+}
+@media (max-width:900px){
+  /* Переключатель опыта остаётся доступным при прокрутке формы */
+  .sfa__head{position:sticky;top:0;height:64px;min-height:64px;gap:12px;padding:0 16px}
+  .sfa__head>b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sfa__head .sfa__inn,.sfa__head .status{display:none}
+  .sfa__tabs{top:64px;overflow-x:auto;scrollbar-width:none;padding:0 16px}
+}
+@media (max-width:760px){
+  /* шапка НИБ: остаются «Назад», переключатель канала и логотип клиента */
+  .top{height:auto;min-height:64px;flex-wrap:wrap;row-gap:8px;padding-top:10px;padding-bottom:10px}
+  .top__role,.top__client>div{display:none}
+  .sfa__inn{display:none}
+  .grid{grid-template-columns:1fr}
+  .pcard{min-height:0;padding:20px}
+  .pcard__body,.pcard--wide .pcard__body{padding-right:0}
+  .pcard__art{display:none}
+  .frow,.frow--addr,.kv,.kv--3{grid-template-columns:1fr}
+  .tv__row{grid-template-columns:1fr;gap:2px}
+  .sfa{grid-template-columns:1fr}.sfa__rail{display:none}
+  .sp__scrim{padding:0}
+  .sp{border-radius:0}
+  .sp__body{padding:0 16px 24px}
+  .sp__ft{padding:16px}
+  .dlg__body{padding:0 20px}
+  .dlg__body:last-child{padding-bottom:24px}
+  .dlg__ft{padding:20px;flex-wrap:wrap}
+  .dlg__ft .btn{flex:1}
+  .dlg__hd{padding:12px 12px 0}
+  .cell,.module-item__toggle{flex-wrap:wrap;row-gap:6px}
+  .cell__main{flex:1 1 100%}
+  .cell__r{text-align:left}
+  .cell__r b,.cell__r span{display:inline}
+  .cell__r span{margin-left:6px}
+  .prow{flex-wrap:wrap}
+  .prow__btns{flex:1 1 100%}
+  .top,.body{padding-left:16px;padding-right:16px}
+  .body{padding-top:24px;padding-bottom:32px}
+  .block,.isle,.sfa__panel,.policy{padding:20px}
+  .staff__row{padding:16px}
+  .sfa__work{padding:16px}
+  .fields,.frow{gap:16px}
+  .module-item__toggle .cell__main{flex:1 1 calc(100% - 40px)}
+  .module-item__toggle .cell__r{margin-left:0;flex:1}
+  .module-item__arrow{margin-left:auto}
+  .module-item__body{padding-left:0}
+  .flow .actions .btn{flex:1 1 auto}
+  .sfa-reco__content{grid-template-columns:1fr;gap:var(--gap-16)}
+  .toast{left:16px;right:16px;top:16px;max-width:none}
+}
+@media (max-width:599px){
+  .top{justify-content:center;gap:8px}
+  .top__spacer,.top__client{display:none}
+  .top__back{margin-right:auto}
+  .pcard__cta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .pcard__cta .btn{width:100%;min-width:0;margin:0}
+  .package-entry__action{grid-column:1/-1}
+  .sfa-reco__head{flex-direction:column;padding:20px}
+  .sfa-reco__main,.sfa-reco__aside{padding:20px}
+  .flow .actions{flex-direction:column;align-items:stretch}
+}
+@media (max-width:420px){
+  .top__back{width:40px;min-width:40px;padding:0;justify-content:center;font-size:0;gap:0}
+  .docs li{flex-wrap:wrap}
+  .docs__meta{white-space:normal}
+  .chan .tag{padding:0 8px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<main id="app"></main>
+<p class="sr" id="live" role="status" aria-live="polite"></p>
+
+<script>
+/* ═══════════ СХЕМА ПАКЕТА ═══════════════════════════════════════
+   Тарифы, суммы и правила — из таблицы «Комплексная защита бизнеса —
+   параметры и калькулятор», лист «Параметры». Формулы повторяют лист
+   «Калькулятор»: премия клиента = ROUND(СС × тариф нетто / (1 − КВ)),
+   тариф берётся по диапазону страховой суммы (MATCH с типом 1). */
+const SCHEMA = {
+  title:'Комплексная защита бизнеса',
+  rules:{minModules:1, maxModules:3, maxEmployees:100},
+  sections:[
+    {id:'prop', name:'Защита имущества', short:'Отделка, оборудование и товар при пожаре, заливе или краже', per:'object', kv:.5,
+     about:'Защита конструктива, внутренней отделки и инженерного оборудования помещения. Товарные запасы и оборудование страхуются по выбору, у каждого объекта своя страховая сумма.',
+     base:['Пожар, взрыв, удар молнии','Залив, прорыв труб, авария отопления','Кража со взломом, грабёж, вандализм','Ураган, град, паводок','Бой витрин и стёкол','Падение деревьев, наезд транспорта, падение летательных аппаратов и беспилотников'],
+     objects:[
+       {id:'build', name:'Конструктив, отделка и инженерное оборудование', required:true, min:1000000, max:10000000,
+        bands:[[1000000,.0035],[2000000,.0022],[3000000,.0014],[5000000,.0012],[8000000,.001]]},
+       {id:'stock', name:'Товарные запасы', min:1000000, max:5000000,
+        bands:[[1000000,.0007],[2000000,.00065],[3000000,.0006],[4000000,.00055]]},
+       {id:'equip', name:'Оборудование', min:1000000, max:5000000,
+        bands:[[1000000,.00075],[2000000,.0007],[3000000,.000625],[4000000,.0006]]}],
+     options:[
+       {id:'rent', name:'Аренда', desc:'Наполнение опции уточняется', fixed:5000}]},
+    {id:'dms', name:'ДМС', short:'Онлайн-консультации, приём в клиниках и обследования', per:'employee', fixed:true, kv:.5, price:16500,
+     about:'ДМС действует для каждого сотрудника, которого вы включили в страховку. Базовая программа: онлайн-консультации, приём в клиниках и обследования. Стоимость считается за сотрудника.',
+     base:['Онлайн-консультации врачей','Приём в клиниках программы','Обследования по назначению врача'],
+     options:[
+       {id:'visits', name:'Безлимитные очные приёмы', desc:'Приёмы врачей и исследования по назначению без ограничения числа', perEmp:35000},
+       {id:'dental', name:'Стоматология', desc:'Без лимита', perEmp:12000}]},
+    {id:'liability', name:'Гражданская ответственность', short:'Ущерб посетителям, соседям и арендодателю по вине бизнеса', per:'limit', kv:.5,
+     needs:['prop','dms'],
+     about:'Защита на случай, если деятельность бизнеса причинила вред жизни, здоровью или имуществу других людей. Оформляется только вместе с имуществом или ДМС.',
+     base:['Вред жизни и здоровью посетителей','Ущерб имуществу посетителей','Ущерб соседям и арендодателю','Судебные расходы по претензиям в рамках условий страхования'],
+     min:3000000, max:10000000,
+     bands:[[3000000,.000666667],[4000000,.0006],[5000000,.00055],[6000000,.0005],[7000000,.000475],[8000000,.00045],[9000000,.000425]],
+     options:[
+       {id:'quality', name:'Ответственность за качество товаров, работ и услуг', desc:'Подлимит 25% от лимита ответственности, входит в лимит', sublimit:.25, rate:.0045}]}
+  ],
+  presets:[
+    {id:'base', name:'Базовый',
+     sel:{prop:{on:true,sums:{build:1000000,stock:0,equip:0},opts:[]}, dms:{on:false,opts:[]}, liability:{on:false,limit:3000000,opts:[]}}},
+    {id:'reco', name:'Для магазина с сотрудниками',
+     sel:{prop:{on:true,sums:{build:3000000,stock:1000000,equip:0},opts:[]}, dms:{on:true,opts:[]}, liability:{on:true,limit:3000000,opts:[]}}},
+    {id:'max',  name:'Максимальный',
+     sel:{prop:{on:true,sums:{build:10000000,stock:5000000,equip:5000000},opts:['rent']}, dms:{on:true,opts:['visits','dental']}, liability:{on:true,limit:10000000,opts:['quality']}}}
+  ],
+  docs:[['Условия страхования «Комплексная защита бизнеса»','PDF · 60 стр.'],['Образец полиса','PDF · 4 стр.'],['Памятка: как получить выплату','PDF · 2 стр.']]
+};
+
+/* Только то, что у банка действительно есть без ручного ввода клиента:
+   регистрационные данные и обороты по счёту. Сотрудников и адреса банк
+   не знает — это тяжело подтягивать автоматически, клиент вводит сам. */
+/* Счета клиента для списания премии — в макете селект показывает остаток */
+const ACCOUNTS = [['Расчётный счёт ··4471','2 480 190,00 ₽'],['Расчётный счёт ··1234','500 000,00 ₽']];
+const CLIENT = {
+  name:'ООО «Продмаркет»', inn:'7725841200', okved:'47.11', okvedName:'Розничная торговля продуктами',
+  turnover:'4,2 млн ₽ в месяц'
+};
+
+/* Проверка полей — по состоянию «Валидация полей» из макета. Пустое поле
+   не ошибка (сотрудник просто не выбирается), неверное — ошибка. */
+const VALID = {
+  fio: v => /^[А-ЯЁA-Z][а-яёa-z-]+(\s+[А-ЯЁA-Z][а-яёa-z-]+){1,2}$/.test(v.trim()) ? '' : 'Укажите фамилию и имя. Отчество, если есть',
+  dob: v => { const m=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v.trim()); if(!m) return 'Дата в формате ДД.ММ.ГГГГ';
+    const d=new Date(+m[3],m[2]-1,+m[1]); if(d.getDate()!==+m[1]||d.getMonth()!==m[2]-1) return 'Такой даты нет';
+    const age=(Date.now()-d)/31557600000; return age<14||age>100 ? 'Сотруднику должно быть от 14 до 100 лет' : ''; },
+  phone: v => { const x=v.replace(/\D/g,''); return /^[78]?9\d{9}$/.test(x) ? '' : 'Мобильный номер: +7 и 10 цифр'; },
+  email: v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? '' : 'Почта в формате ivanova@mail.ru',
+};
+const fmtPhone = v => { const x=v.replace(/\D/g,'').replace(/^[78]/,'').slice(-10); return `+7 ${x.slice(0,3)} ${x.slice(3,6)} ${x.slice(6,8)} ${x.slice(8,10)}`; };
+const staffErrors = d => Object.fromEntries(Object.entries(VALID).map(([k,f])=>[k, (k==='fio'||d[k].trim()) ? f(d[k]) : '']).filter(([,e])=>e));
+const staffFull = p => !!(p.fio && p.dob && p.phone && p.email) && !Object.keys(staffErrors(p)).length;
+const staffMiss = p => [['dob','дату рождения'],['phone','телефон'],['email','почту']].filter(([k])=>!p[k]).map(([,t])=>t);
+const EMPN = () => S.staff.filter(p=>p.on && staffFull(p)).length;
+/* На шаге выбора указывают число сотрудников; на следующем шаге оно
+   заменяется фактически добавленным списком. */
+const quoteEmployees = () => ['config','details'].includes(S.step) && !EMPN() ? S.estimateEmployees : EMPN();
+const perHeadPending = s => s.per==='employee' && !quoteEmployees();
+const esc  = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt  = n => new Intl.NumberFormat('ru-RU').format(Math.round(n));
+const fmt2 = n => new Intl.NumberFormat('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const sec  = id => SCHEMA.sections.find(s=>s.id===id);
+const plural = (n,a,b,c)=>{const m=n%10,h=n%100; return n+' '+((h>=11&&h<=14)?c:(m===1?a:(m>=2&&m<=4?b:c)));};
+const MLN = n => `${String(n/1000000).replace('.',',')} млн ₽`;
+
+/* ═══════════ СОСТОЯНИЕ ══════════════════════════════════════════ */
+const START = {
+  channel:'nib', step:'showcase', flow:'package', singleModule:null, expandedModule:null, panel:null, signing:false,
+  staffMenu:null, toast:null, touched:{}, showErrors:false,
+  sel:structuredClone(SCHEMA.presets.find(p=>p.id==='reco').sel),
+  staff:[], staffEdit:null, staffDraft:null,
+  estimateEmployees:0,
+  addresses:[{addr:''}],
+  payAccount:0, payMail:'office@prodmarket.ru', payMailError:null,
+  agreed:false, signed:false, signway:'pep', consent:false, warn:null,
+  code:'', codeArr:[], codeLeft:0, codeTries:3, codeWrong:false, codeHelp:false
+};
+let S = structuredClone(START);
+
+/* ═══════════ ПРАВИЛА И РАСЧЁТ (как в листе «Калькулятор») ═══════ */
+/* ROUND(x, 0) из Excel: половина — от нуля; гасим двоичный шум умножения */
+const xround = n => Math.sign(n) * Math.round(Math.abs(+n.toPrecision(12)));
+/* INDEX(тарифы; MATCH(СС; «от»; 1)), при СС меньше первой границы — первый тариф (IFERROR) */
+const bandRate = (bands, v) => { let r = bands[0][1]; for(const [from, rate] of bands) if(v >= from) r = rate; return r; };
+const gross = (sum, rate, kv) => xround(sum * rate / (1 - kv));
+const sumsOf = sel => sel.sums || {};
+/* ГО без имущества и ДМС не оформляется: в таблице её премия тогда 0 */
+const liabilityAllowed = (sel = S.sel) => sel.prop.on || sel.dms.on;
+function activeOpts(sid, sel = S.sel[sid]){ return sel.opts.filter(oid=>sec(sid).options.some(o=>o.id===oid)); }
+function optState(){ return {ok:true}; }
+
+function calcSection(sid, sel = S.sel[sid], all = S.sel){
+  const s = sec(sid), opts = activeOpts(sid, sel).map(oid=>s.options.find(o=>o.id===oid));
+  let premium = 0, insured = 0, units = 1;
+  const parts = [];
+  if(s.per==='object'){
+    for(const o of s.objects){
+      const v = +sumsOf(sel)[o.id] || 0; if(!v) continue;
+      const p = gross(v, bandRate(o.bands, v), s.kv);
+      parts.push({id:o.id, name:o.name, sum:v, rate:bandRate(o.bands, v), premium:p});
+      premium += p; insured += v;
+    }
+    for(const o of opts){ parts.push({id:o.id, name:o.name, premium:o.fixed}); premium += o.fixed; }
+  } else if(s.per==='limit'){
+    const v = +sel.limit || 0;
+    if(liabilityAllowed(all) && v){
+      const p = gross(v, bandRate(s.bands, v), s.kv);
+      parts.push({id:'limit', name:'Лимит ответственности', sum:v, rate:bandRate(s.bands, v), premium:p});
+      premium += p; insured = v;
+      for(const o of opts){ const q = xround(v * o.sublimit * o.rate / (1 - s.kv)); parts.push({id:o.id, name:o.name, sum:v*o.sublimit, premium:q}); premium += q; }
+    }
+  } else if(s.per==='employee'){
+    units = quoteEmployees();
+    premium = units * (s.price + opts.reduce((a,o)=>a+o.perEmp,0));
+  }
+  return {premium, insured, units, opts, parts, kv:s.kv, bank:xround(premium*s.kv)};
+}
+function calc(sel = S.sel){
+  const onIds = SCHEMA.sections.filter(s=>sel[s.id].on).map(s=>s.id);
+  const rows = onIds.map(id=>({id, ...calcSection(id, sel[id], sel)}));
+  const premium = rows.reduce((a,r)=>a+r.premium,0);
+  const bank = rows.reduce((a,r)=>a+r.bank,0);
+  const insured = rows.reduce((a,r)=>a+r.insured,0);
+  return {rows, onIds, gross:premium, premium, insured, bank};
+}
+/* Цена доп. услуги сама по себе: сколько она добавляет к модулю в год */
+function optPrice(sid, oid){
+  const cur = S.sel[sid], rest = activeOpts(sid).filter(x=>x!==oid);
+  return calcSection(sid, {...cur, opts:[...rest, oid]}).premium - calcSection(sid, {...cur, opts:rest}).premium;
+}
+/* «Ответственность за качество» в таблице — «от» по минимальному лимиту */
+function optFrom(sid, o){
+  const s = sec(sid);
+  if(o.perEmp) return o.perEmp;
+  if(o.fixed) return o.fixed;
+  return xround(s.min * o.sublimit * o.rate / (1 - s.kv));
+}
+function optCost(sid, o){
+  if(sec(sid).per==='employee' && !quoteEmployees()) return [RUB(o.perEmp), 'на сотрудника в год'];
+  const p = optPrice(sid, o.id);
+  return p ? [RUB(p), 'в год'] : [`от ${RUB(optFrom(sid,o))}`, 'в год'];
+}
+function optShort(sid, o){
+  if(sec(sid).per==='employee' && !quoteEmployees()) return `+${RUB(o.perEmp)} за сотрудника`;
+  return `+${RUB(optPrice(sid, o.id))}`;
+}
+function toggleSection(id){
+  S.sel[id].on = !S.sel[id].on;
+  S.warn = null;
+}
+function applyPreset(id){
+  const p = SCHEMA.presets.find(x=>x.id===id);
+  S.sel = structuredClone(p.sel); S.warn = null;
+}
+/* Ошибки ввода — тексты и порядок из ячейки «Проверка пакета» */
+function sumError(sid, oid){
+  const s = sec(sid);
+  if(sid==='liability'){
+    const v = +S.sel.liability.limit || 0;
+    if(!v) return 'Укажите лимит';
+    return v < s.min || v > s.max ? `Лимит от ${MLN(s.min)} до ${MLN(s.max)}` : '';
+  }
+  const o = s.objects.find(x=>x.id===oid), v = +S.sel.prop.sums[oid] || 0;
+  if(!v) return o.required ? 'Укажите страховую сумму' : '';
+  return v < o.min || v > o.max ? `Сумма от ${MLN(o.min)} до ${MLN(o.max)}` : '';
+}
+
+/* ═══════════ ИКОНКИ ═════════════════════════════════════════════ */
+/* Иконки меню: линейные 20×20, цвет от текста. Заменяют квадраты-заглушки. */
+const IC = {
+  'Все сервисы':'<rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/>',
+  'Бонусы':'<path d="M3 8h14v9H3zM2 5h16v3H2zM10 5v12M10 5c-1-2.5-4.5-2.5-4.5-.5S10 5 10 5Zm0 0c1-2.5 4.5-2.5 4.5-.5S10 5 10 5Z"/>',
+  'Новый платёж':'<circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v7M6.5 10h7"/>',
+  'Лента операций':'<path d="M4 5h12M4 10h12M4 15h8"/>',
+  'Платежи в работе':'<circle cx="10" cy="10" r="7.5"/><path d="M10 6v4l2.5 2"/>',
+  'Импорт реестров':'<path d="M10 3v9M6.5 8.5 10 12l3.5-3.5M3 13v3h14v-3"/>',
+  'Выписка':'<path d="M5 2.5h7l3.5 3.5v11.5H5z"/><path d="M8 10h5M8 13h5"/>',
+  'Счета':'<rect x="2.5" y="5" width="15" height="11" rx="2"/><path d="M2.5 8.5h15M5.5 13h3"/>',
+  'Контрагенты':'<circle cx="7.5" cy="7" r="2.5"/><path d="M3 16c0-2.5 2-4.5 4.5-4.5S12 13.5 12 16"/><circle cx="13.5" cy="7.5" r="2"/><path d="M13.5 11.5c2 0 3.5 1.6 3.5 4"/>',
+  'Справки':'<path d="M5 2.5h7l3.5 3.5v11.5H5z"/><path d="m7.5 11.5 2 2 3.5-4"/>',
+  'Счета на оплату':'<path d="M4.5 2.5h11v15l-2-1.3-1.8 1.3-1.7-1.3-1.8 1.3-1.7-1.3-2 1.3z"/><path d="M7.5 7h5M7.5 10h5"/>',
+  'Страховки для бизнеса':'<path d="M10 2.5 16 5v5c0 3.7-2.6 6.2-6 7.5-3.4-1.3-6-3.8-6-7.5V5z"/><path d="m7.5 10 1.8 1.8 3.2-3.3"/>',
+  'Госзакупки':'<path d="M2.5 7 10 3l7.5 4zM4 7.5v7M8 7.5v7M12 7.5v7M16 7.5v7M2.5 17h15"/>',
+  'Работа':'<rect x="2.5" y="6" width="15" height="10.5" rx="2"/><path d="M7 6V4.5h6V6M2.5 10.5h15"/>',
+  'Задачи':'<path d="m3.5 5.5 1.5 1.5 2.5-2.5M3.5 12.5 5 14l2.5-2.5M10 6h6.5M10 13h6.5"/>',
+  'Сделки':'<path d="M3 7h12l-3-3M17 13H5l3 3"/>',
+  'Клиенты':'<circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/>',
+  'Продукты':'<path d="M10 2.5 17 6v8l-7 3.5L3 14V6z"/><path d="M3 6l7 3.5L17 6M10 9.5v8"/>',
+  'Отчёты':'<path d="M3 17h14M5.5 14V9M10 14V5M14.5 14v-3"/>',
+};
+const ico = k => `<svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[k]||''}</svg>`;
+/* Глифы в сетке 24 (как CheckmarkM, ChevronDownM, CrossHeavyM в ките); цвет от текста */
+const svg24 = d => `<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor">${d}</svg>`;
+const SVG_CHECK = `<svg aria-hidden="true" focusable="false" viewBox="0 0 12 12" fill="none"><path d="M2 6.3 4.8 9 10 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+/* Отметка Checkbox: путь из core-components/checkbox */
+const SVG_MARK  = `<svg aria-hidden="true" focusable="false" viewBox="0 0 10 8"><path d="M10 1.5 3.5 8 0 4.5 1.5 3l2 2 5-5L10 1.5Z" fill="currentColor"/></svg>`;
+const SVG_CHEV  = svg24('<path d="M6.3 9.3 12 15l5.7-5.7-1.4-1.4L12 12.2 7.7 7.9z"/>');
+const SVG_BACK  = svg24('<path d="M14.6 5.3 8 12l6.6 6.7 1.4-1.4L10.8 12 16 6.7z"/>');
+const SVG_X     = svg24('<path d="m12 10.2 5.3-5.3 1.8 1.8-5.3 5.3 5.3 5.3-1.8 1.8-5.3-5.3-5.3 5.3-1.8-1.8 5.3-5.3-5.3-5.3 1.8-1.8z"/>');
+const SVG_PLUS  = `<svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" fill="currentColor"><path d="M7 3h2v4h4v2H9v4H7V9H3V7h4z"/></svg>`;
+const SVG_MINUS = svg24('<path d="M5 11h14v2H5z"/>');
+const SVG_PLUS24= svg24('<path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/>');
+const SVG_MORE  = svg24('<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>');
+const SVG_EDIT  = svg24('<path d="m14.6 4.6 4.8 4.8L9 19.8H4.2V15zm0 2.8L6.2 15.8v2h2l8.4-8.4z"/>');
+const SVG_TRASH = svg24('<path d="M9 3h6v2h5v2H4V5h5zM6 8h12l-1 13H7zm2.1 2 .8 9h6.2l.8-9z"/>');
+const SVG_DOC   = svg24('<path d="M6 2h8l5 5v15H6zm2 2v16h9V8h-4V4zm2 9h5v1.6h-5zm0 3h5v1.6h-5z"/>');
+const SVG_DL    = svg24('<path d="M11 3h2v9.2l3.3-3.3 1.4 1.4L12 16l-5.7-5.7 1.4-1.4 3.3 3.3zM5 19h14v2H5z"/>');
+const SVG_CAL   = svg24('<path d="M7 2h2v2h6V2h2v2h3v17H4V4h3zm11 7H6v10h12z"/>');
+const SVG_WALLET= svg24('<path d="M4 5h14v3h2v12H4zm2 2v11h12v-8H6.5V8h10V7zm9 5.5h2v2h-2z"/>');
+const SVG_PEOPLE= svg24('<path d="M9 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8m0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4M2 20c0-3.9 3.1-6 7-6s7 2.1 7 6h-2c0-2.6-2.2-4-5-4s-5 1.4-5 4zm14.5-15.8a4 4 0 0 1 0 7.6l-.7-1.9a2 2 0 0 0 0-3.8zM22 20h-2c0-1.7-.9-2.9-2.4-3.5l.7-1.9C20.6 15.4 22 17.3 22 20"/>');
+const SVG_HOUSE = svg24('<path d="m12 3 9 7.2V21H3V10.2zm0 2.6-7 5.6V19h4v-5h6v5h4v-7.8zM11 16v3h2v-3z"/>');
+const SVG_SHIELD= svg24('<path d="M12 2 20 5v6c0 5-3.4 9.1-8 11-4.6-1.9-8-6-8-11V5zm0 2.1L6 6.4V11c0 3.8 2.4 7 6 8.8 3.6-1.8 6-5 6-8.8V6.4z"/>');
+/* иллюстрации карточек — плоские, двухцветные (в макете 3D-рендеры; здесь заглушки той же геометрии) */
+const ART = {
+  pkg:`<svg aria-hidden="true" focusable="false" viewBox="0 0 156 156" fill="none"><rect x="18" y="30" width="120" height="96" rx="14" class="a1"/><rect x="18" y="30" width="120" height="30" rx="14" class="a2"/><rect x="34" y="76" width="52" height="8" rx="4" class="aw"/><rect x="34" y="94" width="88" height="8" rx="4" class="aw"/><circle cx="118" cy="104" r="20" class="a3"/><path d="m109 104 6 6 12-12" class="aws" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  dms:`<svg aria-hidden="true" focusable="false" viewBox="0 0 120 120" fill="none"><path d="M60 16 96 28v30c0 22-16 36-36 44-20-8-36-22-36-44V28l36-12Z" class="a1"/><path d="M60 16 96 28v30c0 22-16 36-36 44V16Z" class="a2"/><path d="M46 60h28M60 46v28" class="aws" stroke-width="8" stroke-linecap="round"/></svg>`,
+  prop:`<svg aria-hidden="true" focusable="false" viewBox="0 0 120 120" fill="none"><path d="M20 56 60 24l40 32v44H20V56Z" class="a1"/><path d="M60 24l40 32v44H60V24Z" class="a2"/><rect x="50" y="68" width="20" height="32" class="aw"/></svg>`
+};
+const chk = on => `<i class="chk${on?' is-on':''}" aria-hidden="true">${SVG_MARK}</i>`;
+const mk  = () => `<i class="mk" aria-hidden="true">${SVG_CHECK}</i>`;
+const EMP = n => plural(n,'сотрудник','сотрудника','сотрудников');
+/* Button view: в интернет-банке главная кнопка accent, в рабочем месте — primary (графит) */
+const PRI = () => S.channel==='sfa' ? 'btn--primary' : 'btn--accent';
+/* Amount: «16 500,00 ₽» — копейки и валюта приглушены, как в ките */
+const AMOUNT = n => { const [maj,min] = fmt2(n).split(','); return `<span class="amount">${maj}<small>,${min} ₽</small></span>`; };
+const btnIcon = icon => icon.replace('<svg ', '<svg class="btn__icon" ');
+const CHANNELS = [['nib','Интернет-банк'],['sfa','Рабочее место']];
+const elChannel = () => `<div class="chan" role="group" aria-label="Канал">${CHANNELS.map(([id,name])=>
+  `<button type="button" class="tag" data-act="channel" data-v="${id}" aria-pressed="${S.channel===id}">${name}</button>`).join('')}</div>`;
+const RUB = n => `${fmt(n)}\u00A0₽`;
+/* Чей это бизнес — из данных, которые у банка уже есть */
+const MINE = () => S.channel==='sfa' ? 'бизнес клиента' : 'ваш бизнес';
+function elProfile(){
+  return `<div class="prof"><span class="prof__t">Подобрали под ${MINE()}:</span>
+    <span class="prof__i">${CLIENT.okvedName.toLowerCase()}</span>
+    <span class="prof__i">оборот ${CLIENT.turnover}</span></div>`;
+}
+/* Клиент отошёл от подобранного состава — можно вернуться одним нажатием */
+
+/* ═══════════ МАСКИ ПОЛЕЙ ═══════════════════════════════════════════
+   Повторяют поведение кита: AmountInput (разряды через U+205F, лишняя цифра
+   отклоняется), NumberInput, PhoneInput «+7 000 000 00 00», DateInput
+   «ДД.ММ.ГГГГ». Каретка остаётся за той же цифрой, что и до форматирования. */
+const MMSP = '\u205F', THINSP = '\u2009';
+const MASKS = {
+  amount:{ max:9, fmt:d=>d.replace(/\B(?=(\d{3})+(?!\d))/g, MMSP) },
+  count: { max:3, fmt:d=>d },
+  phone: { max:10, prefix:'+7 ', fmt:d=>d ? '+7 '+[d.slice(0,3),d.slice(3,6),d.slice(6,8),d.slice(8,10)].filter(Boolean).join(' ') : '' },
+  date:  { max:8, fmt:d=>[d.slice(0,2),d.slice(2,4),d.slice(4,8)].filter(Boolean).join('.') },
+};
+const amountView = n => n ? MASKS.amount.fmt(String(n)) : '';
+/* Позиция каретки сразу за n-й введённой цифрой (цифры префикса не считаются) */
+function caretAfter(view, n, prefix=''){
+  if(!n) return prefix && view.startsWith(prefix) ? prefix.length : 0;
+  let seen = 0;
+  for(let i = prefix && view.startsWith(prefix) ? prefix.length : 0; i < view.length; i++){
+    if(/\d/.test(view[i]) && ++seen === n) return i + 1;
+  }
+  return view.length;
+}
+/* raw — значение после ввода, caret — где каретка; prev — отформатированное значение до ввода */
+function maskValue(kind, raw, caret, prev=''){
+  const m = MASKS[kind];
+  const strip = v => { let d = v.replace(/\D/g,''); if(m.prefix && v.startsWith('+7')) d = d.slice(1); return d; };
+  let digits = strip(raw), before = strip(raw.slice(0, caret)).length;
+  if(m.prefix && !raw.startsWith('+7')){
+    /* PhoneInput: номер, вставленный с 7 или 8, или ввод, начатый с 7 или 8, становится «+7 …» */
+    if(digits.length > m.max && /^[78]/.test(digits)){ digits = digits.slice(1); before = Math.max(0, before - 1); }
+    else if(!prev && /^[78]$/.test(digits)) return {value:'+7 ', digits:'', caret:3};
+  }
+  if(digits.length > m.max) return null;
+  const value = m.fmt(digits);
+  return {value, digits, caret:caretAfter(value, before, m.prefix)};
+}
+
+/* ═══════════ ДАННЫЕ ДЛЯ ЭЛЕМЕНТОВ ═══════════════════════════════ */
+/* Цена «от» — как в листе «Параметры»: минимальная сумма × первый тариф */
+function minPrice(sid){
+  const s = sec(sid);
+  if(s.per==='employee') return s.price;
+  if(s.per==='limit') return gross(s.min, s.bands[0][1], s.kv);
+  const o = s.objects.find(x=>x.required); return gross(o.min, o.bands[0][1], s.kv);
+}
+/* У фиксированной программы одна цена, не диапазон — без слова «от» */
+const priceWord = s => s.fixed ? '' : 'от ';
+/* Минимальный пакет по правилам продукта — самый дешёвый из модулей, которые можно оформить отдельно */
+const packageMin = () => Math.min(minPrice('prop'), minPrice('dms'));
+function presetCalc(id){
+  const saved = S.sel; S.sel = structuredClone(SCHEMA.presets.find(p=>p.id===id).sel); const c = calc(); S.sel = saved; return c;
+}
+function sectionLine(s){
+  const r = calcSection(s.id), sel = S.sel[s.id];
+  let main;
+  if(s.per==='employee') main = quoteEmployees() ? `${!EMPN()?'Предварительно ':''}${EMP(quoteEmployees())}` : 'Укажите число сотрудников';
+  else if(s.per==='limit') main = !liabilityAllowed() ? 'Только вместе с имуществом или ДМС' : sel.limit ? `Лимит ${RUB(sel.limit)}` : 'Укажите лимит';
+  else main = r.insured ? `Страховая сумма ${RUB(r.insured)}` : 'Укажите страховую сумму';
+  const extra = r.opts.map(o=>`${o.name.toLowerCase()} ${optShort(s.id,o)}`);
+  return `${main}${extra.length?` · ${extra.join(', ')}`:''}`;
+}
+const SFA_SALES_POINTS = [
+  'Имущество: отделка и инженерное оборудование от 1 до 10 млн ₽, товар и оборудование по выбору до 5 млн ₽',
+  'Гражданская ответственность оформляется только вместе с имуществом или ДМС, лимит от 3 до 10 млн ₽',
+  `ДМС: онлайн-консультации, приём в клиниках и обследования, ${RUB(16500)} за сотрудника`,
+  'Аренду, безлимитные приёмы, стоматологию и ответственность за качество можно подключить за дополнительную плату',
+  'Состав можно изменить до оформления'
+];
+function presetEmployeeRate(id){
+  const d = SCHEMA.presets.find(p=>p.id===id).sel.dms;
+  if(!d.on) return 0;
+  return sec('dms').price + d.opts.reduce((total, oid)=>total + (sec('dms').options.find(o=>o.id===oid)?.perEmp || 0), 0);
+}
+function presetEmployeeIncrement(id){
+  return presetEmployeeRate(id);
+}
+function elPackagePlacements(){
+  return `<section class="sect package-showcase" aria-labelledby="package-entry-title">
+    <article class="card pcard pcard--wide package-entry">
+      <div class="pcard__body">
+        <div class="pcard__hd"><h2 class="t-h3" id="package-entry-title">Комплексная защита</h2>
+          <p class="t-md">Имущество, ДМС и ответственность перед третьими лицами</p></div>
+        <div class="pcard__facts"><div><span>Состав</span><b>От ${SCHEMA.rules.minModules} до ${SCHEMA.rules.maxModules} модулей</b></div><div><span>Стоимость</span><b>от ${RUB(packageMin())} в год</b></div></div>
+        <div class="pcard__cta"><span class="btn btn--secondary package-entry__action" aria-hidden="true">Рассчитать</span></div>
+      </div>
+      <div class="pcard__art">${ART.pkg}</div>
+      <button type="button" class="package-entry__hit" data-act="package-open" aria-label="Открыть комплексную защиту и настроить условия"></button>
+    </article>
+  </section>`;
+}
+
+/* ═══════════ ЭЛЕМЕНТЫ ═══════════════════════════════════════════ */
+function elModuleRow(s){
+  const on=S.sel[s.id].on, expanded=S.expandedModule===s.id, p=on?calcSection(s.id).premium:0;
+  const cost=p?RUB(p):priceWord(s)+RUB(minPrice(s.id));
+  return `<div class="module-item">
+    <div class="module-item__head">
+      <label class="module-item__select" for="module-${s.id}"><input type="checkbox" class="module-choice module-choice--check" id="module-${s.id}" data-act="module-input" data-v="${s.id}" ${on?'checked':''}><span class="sr">Включить ${s.name}</span></label>
+      <button type="button" class="module-item__toggle" id="module-toggle-${s.id}" data-act="module-open" data-v="${s.id}" aria-expanded="${expanded}" aria-controls="module-body-${s.id}">
+        <span class="cell__main"><span class="cell__t">${s.name}</span><span class="cell__s">${on?sectionLine(s):s.short}</span></span>
+        <span class="cell__r"><b>${cost}</b><span>${s.per==='employee'&&!p?'на сотрудника в год':'в год'}</span></span>
+        <span class="module-item__arrow" aria-hidden="true">${SVG_CHEV}</span>
+      </button>
+    </div>
+    <div class="module-item__body" id="module-body-${s.id}" ${expanded?'':'hidden'}>${expanded?elModuleControls(s,'inline'):''}</div>
+  </div>`;
+}
+function elSections(){
+  const modules=S.flow==='single'&&S.singleModule?[sec(S.singleModule)]:SCHEMA.sections;
+  return `<div class="module-list">${modules.map(elModuleRow).join('')}</div>`;
+}
+function elWarn(){ return S.warn && !S.panel ? `<div class="note" role="status"><span>${S.warn}</span></div>` : ''; }
+/* Адрес страхуемого помещения: в таблице расчёт ведётся на один объект */
+function elParams(){
+  const a = S.addresses[0];
+  return `<div class="fields"><div class="field"><label for="addr-0">Адрес помещения</label><input id="addr-0" data-act="addr" data-v="0" value="${esc(a.addr)}" placeholder="Город, улица, дом"></div></div>`;
+}
+/* Блок «Сотрудники» — по макету «Оформление страховки»: карточка на каждого
+   (ContentCardWrapper), действия в меню «⋯», добавление в модалке. Сотрудник
+   входит в страховку, когда его данные полные. */
+function elStaffRow(p, i){
+  const full = staffFull(p), miss = staffMiss(p);
+  const sub = full ? `${p.dob} · ${p.phone} · ${p.email}`
+    : `<span class="staff__warn">Чтобы застраховать сотрудника, добавьте ${miss.join(', ')}</span>`;
+  const open = S.staffMenu===i;
+  return `<li class="staff__row">
+    <div class="staff__main"><span class="staff__fio">${esc(p.fio)}</span><span class="staff__sub">${sub}</span></div>
+    <button type="button" class="ibtn" data-act="staff-menu" data-v="${i}" aria-label="Действия: ${esc(p.fio)}" aria-haspopup="menu" aria-expanded="${open}">${SVG_MORE}</button>
+    ${open ? `<div class="menu" role="menu">
+      <button type="button" role="menuitem" data-act="staff-edit" data-v="${i}">${SVG_EDIT}Изменить данные</button>
+      <button type="button" role="menuitem" data-act="staff-del" data-v="${i}">${SVG_TRASH}Удалить</button></div>` : ''}
+  </li>`;
+}
+function elStaffField(k, label, ph, attrs, addon=''){
+  const d = S.staffDraft, err = (S.staffErr||{})[k];
+  return `<div><div class="field${err?' field--err':''}"><label for="st-${k}">${label}</label>
+      <input id="st-${k}" data-act="staff-f" data-v="${k}" value="${esc(d[k])}" placeholder="${ph}" ${attrs}
+        ${err?`aria-invalid="true" aria-describedby="st-${k}-err"`:''}>${addon?`<span class="field__addons" aria-hidden="true">${addon}</span>`:''}</div>
+    ${err?`<p class="field__err" id="st-${k}-err">${err}</p>`:''}</div>`;
+}
+/* Modal 500 «Добавление сотрудника»: поля и две кнопки, как в макете */
+function elStaffForm(){
+  if(S.staffEdit===null || !S.staffDraft) return '';
+  const isNew = S.staffEdit==='new';
+  return `<div class="dlg__scrim" data-act="staff-cancel"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="stf-t">
+    <div class="dlg__hd"><h3 id="stf-t" tabindex="-1">${isNew?'Добавление сотрудника':'Данные сотрудника'}</h3>
+      <button type="button" class="dlg__x" data-act="staff-cancel" aria-label="Закрыть">${SVG_X}</button></div>
+    <div class="dlg__body"><div class="fields">
+      ${elStaffField('fio','ФИО','Иванова Мария Викторовна','autocomplete="off"')}
+      <div class="frow">
+        ${elStaffField('dob','Дата рождения','ДД.ММ.ГГГГ','data-mask="date" inputmode="numeric" autocomplete="off"', SVG_CAL)}
+        ${elStaffField('phone','Телефон','+7 000 000 00 00','data-mask="phone" type="tel" inputmode="tel" autocomplete="off"')}
+      </div>
+      ${elStaffField('email','Email','ivanova@mail.ru','type="email" inputmode="email" autocomplete="off"')}
+    </div></div>
+    <div class="dlg__ft">
+      <button type="button" class="btn btn--48 ${PRI()}" data-act="staff-save">${isNew?'Добавить':'Сохранить'}</button>
+      <button type="button" class="btn btn--48 btn--secondary" data-act="staff-cancel">Отменить</button>
+    </div>
+  </div></div>`;
+}
+function elStaff(){
+  const n = EMPN();
+  return `<div class="block__hd"><h2 class="t-h3">Сотрудники</h2>
+      <p>Добавьте всех, кого хотите застраховать. Стоимость ДМС считается за каждого</p></div>
+    ${elEstimateReminder()}
+    ${S.staff.length ? `<ul class="staff">${S.staff.map(elStaffRow).join('')}</ul>`
+      : `<p class="staff__empty">Вы ещё не добавили ни одного сотрудника</p>`}
+    <button type="button" class="btn btn--secondary btn--addon addr-add" data-act="staff-add">${btnIcon(SVG_PLUS)}Добавить</button>
+    ${n ? `<p class="t-sm sec">В страховку войдут ${EMP(n)} · ${RUB(calcSection('dms').premium)} в год</p>` : ''}`;
+}
+/* ToastPlate: короткое подтверждение действия, закрывается само */
+function elToast(){
+  if(!S.toast) return '';
+  return `<div class="toast" role="status"><span class="toast__badge" aria-hidden="true">${SVG_CHECK}</span>${S.toast}
+    <button type="button" class="toast__x" data-act="toast-close" aria-label="Закрыть уведомление">${SVG_X}</button></div>`;
+}
+let toastTimer = null;
+function showToast(text){ S.toast = text; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ S.toast=null; rerenderKeepScroll(); }, 3000); }
+function elEstimateReminder(){
+  if(!S.sel.dms.on || !S.estimateEmployees || EMPN()) return '';
+  return `<div class="note" role="status"><span>В расчёте учтено ${EMP(S.estimateEmployees)}. Добавьте их данные, чтобы уточнить стоимость</span></div>`;
+}
+/* Счёт списания — на шаге настройки, как в макете (AccountSelect, FormControl 56) */
+function elAccount(){
+  return `<section class="block"><h2 class="t-h3">Счёт списания</h2>
+    <div class="field field--select"><label for="pay-acc">${ACCOUNTS[S.payAccount][0]}</label>
+      <select id="pay-acc" data-act="pay-acc">${ACCOUNTS.map((a,i)=>`<option value="${i}" ${S.payAccount===i?'selected':''}>${a[1]}${S.payAccount===i?'':` · ${a[0]}`}</option>`).join('')}</select></div>
+  </section>`;
+}
+/* Steps, vertical: 24 маркер, линия 2px между шагами */
+function elSteps(cur){
+  const steps = ['Настройка страховки','Адреса и сотрудники','Проверка и подписание документов'];
+  return `<div class="isle"><ol class="steps">${steps.map((t,i)=>`<li class="step${i<cur?' is-done':i===cur?' is-now':''}"${i===cur?' aria-current="step"':''}>
+    <span class="step__ind" aria-hidden="true"><i class="step__mark">${i<cur?SVG_CHECK:i+1}</i><i class="step__dash"></i></span>
+    <span class="step__text">${t}</span></li>`).join('')}</ol></div>`;
+}
+/* brief=true — только итоги, без построчного повтора программ: на шаге «Счёт и
+   документы» их построчная разбивка уже есть слева, в «Составе пакета». */
+function elSummary(brief){
+  const c = calc();
+  return `<div class="isle"><div class="sum">
+    ${brief ? '' : c.rows.map(r=>{const s=sec(r.id);
+      return `<div class="srow"><span>${s.name}</span><b>${perHeadPending(s) ? `${RUB(minPrice(s.id))} за чел.` : RUB(r.premium)}</b></div>`;}).join('')}
+    <div class="srow srow--total"><span>${S.step==='checkout'?'Стоимость за год':'Предварительная стоимость за год'}</span><b>${RUB(c.premium)}</b></div>
+    <div class="srow"><span>Лимиты</span><b>По каждой программе отдельно</b></div>
+  </div></div>`;
+}
+function elPkgSummary(){
+  const c = calc();
+  return `<div class="cells cells--last">${c.rows.map(r=>{const s=sec(r.id);
+      return `<div class="cell"><div class="cell__main"><div class="cell__t">${s.name}</div><div class="cell__s">${sectionLine(s)}</div></div><div class="cell__r"><b>${RUB(r.premium)}</b></div></div>`;}).join('')}
+    <div class="cell"><div class="cell__main"><div class="cell__t">Итого в год</div><div class="cell__s">Страховые суммы и лимиты указаны выше${S.sel.dms.on?` · ${EMP(EMPN())}`:''}</div></div><div class="cell__r"><b class="strong">${RUB(c.premium)}</b></div></div>
+  </div>`;
+}
+function elDocs(){
+  const docs = [['Образец полиса','PDF · 4 стр.'],['Проект договора','PDF · 12 стр.'],['Образец счёта на оплату','PDF · 1 стр.']];
+  if(S.sel.dms.on) docs.splice(2,0,['Список застрахованных',`PDF · ${EMP(EMPN())}`]);
+  return `<ul class="docs">${docs.map(([d,m])=>`<li><span class="docs__ico" aria-hidden="true">${SVG_DOC}</span><span class="docs__name">${d}</span><span class="docs__meta">${m}</span><span class="docs__dl" aria-hidden="true">${SVG_DL}</span></li>`).join('')}</ul>`;
+}
+function elPolicy(){
+  const c = calc();
+  return `<div class="policy">
+    <div class="policy__hd"><div class="t-h3">${SCHEMA.title}</div><div class="t-sm sec">Образец расчёта для ${CLIENT.name} · не является действующим полисом</div></div>
+    <div>${c.rows.map(r=>{const s=sec(r.id);
+      const what = s.base.map((t,i)=>i?t[0].toLowerCase()+t.slice(1):t).join(', ');
+      const add = r.opts.map(o=>`${o.name}: ${RUB(optPrice(s.id,o.id))} в год`).join('; ');
+      const sum = s.per==='employee' ? EMP(EMPN()) : RUB(r.insured);
+      return `<div class="psec"><b>${s.name}<em>${sum}</em></b><span>${what}</span>${add?`<span>Доп. услуги: ${add}</span>`:''}</div>`;}).join('')}</div>
+    <div class="sum"><div class="srow"><span>Лимиты</span><b>По каждой программе отдельно</b></div>
+    <div class="srow"><span>Расчёт стоимости за год</span><b>${fmt2(c.premium)} ₽</b></div></div>
+  </div>`;
+}
+/* Шаг «Проверка и подписание» — как в макете: параметры таблицей
+   (TableView), документы со скачиванием, кнопки под блоками. */
+function elCheckoutBlocks(){
+  const c = calc(), sfa = S.channel==='sfa', paper = sfa && S.signway==='paper';
+  const rows = [['Срок действия','1 год'],
+    ...(S.flow==='package' ? [['Модули', c.rows.map(r=>sec(r.id).name).join(', ')]] : []),
+    ...(S.sel.dms.on ? [['Количество застрахованных', String(EMPN())]] : []),
+    ...(S.sel.prop.on ? [['Страховая сумма имущества', RUB(calcSection('prop').insured)]] : []),
+    ...(S.sel.liability.on ? [['Лимит ответственности', RUB(S.sel.liability.limit)]] : []),
+    ...(S.sel.prop.on || S.sel.liability.on ? [['Адрес помещения', esc(S.addresses[0].addr)]] : []),
+    ['Стоимость', AMOUNT(c.premium)],
+    /* КВ банка видит только менеджер — в рабочем месте */
+    ...(S.channel==='sfa' ? [['КВ банка', `${RUB(c.bank)} · ${String(Math.round(c.bank/c.premium*100)).replace('.',',')}%`]] : []),
+    ['Счёт списания', ACCOUNTS[S.payAccount][0].replace('Расчётный счёт ','')]];
+  return `<section class="block"><h2 class="t-h3">Параметры страхования</h2>
+      <div class="tv">${rows.map(([k,v])=>`<div class="tv__row"><span class="tv__k">${k}</span><span class="tv__v">${v}</span></div>`).join('')}</div>
+    </section>
+    ${S.flow==='package' ? `<section class="block"><h2 class="t-h3">Состав пакета</h2>${elPkgSummary()}</section>` : ''}
+    <section class="block">
+      <div class="block__hd"><h2 class="t-h3">Документы</h2><p>Проверьте перед подписанием</p></div>
+      ${elDocs()}
+      <div><div class="field${S.payMailError?' field--err':''}"><label for="pay-mail">Email для документов</label><input id="pay-mail" data-act="pay-mail" type="email" value="${esc(S.payMail)}" placeholder="office@company.ru" ${S.payMailError?'aria-invalid="true" aria-describedby="pay-mail-err"':'aria-describedby="pay-mail-hint"'}></div>
+      ${S.payMailError?`<p class="field__err" id="pay-mail-err">${S.payMailError}</p>`:`<p class="field__sub" id="pay-mail-hint">Вышлем полис и документы после оформления</p>`}</div>
+      ${sfa ? `<div class="tags" role="group" aria-label="Способ подписания"><button type="button" class="tag" data-act="signway" data-v="pep" aria-pressed="${S.signway==='pep'}">Подпись кодом</button><button type="button" class="tag" data-act="signway" data-v="paper" aria-pressed="${S.signway==='paper'}">На бумаге</button></div>` : ''}
+      <div>
+        <button type="button" class="check" role="checkbox" aria-checked="${S.agreed}" data-act="agree">${chk(S.agreed)}<span>${paper ? `Клиент согласен с составом и стоимостью страховки ${RUB(c.premium)}` : `${sfa?'Клиент подтверждает':'Подтверждаю'} согласие на взимание и списание страховой премии ${RUB(c.premium)}`}</span></button>
+        <button type="button" class="lnk lnk--pseudo t-sm check__more" data-act="consent">Что это значит</button>
+      </div>
+    </section>
+    <div class="flow"><div class="actions">
+      <button type="button" class="btn btn--56 ${PRI()}" data-act="start-sign">${paper ? 'Посмотреть комплект документов' : 'Подписать и оплатить'}</button>
+      <button type="button" class="btn btn--56 btn--secondary" data-act="back">Назад</button>
+    </div></div>`;
+}
+/* Код подтверждения — UniversalModal по центру, как в макете: CodeInput
+   на пять ячеек, отправка сразу после ввода последней цифры. */
+/* В прототипе код «00000» считается неверным — чтобы показать состояние
+   ошибки из макета. Любые другие пять цифр подходят. */
+const CODE_LEN = 5;
+const WRONG_CODE = '0'.repeat(CODE_LEN);
+const mmss = t => `00:${String(t).padStart(2,'0')}`;
+const codeDigits = () => Array.from({length:CODE_LEN},(_,i)=>S.codeArr[i]||'');
+const syncCode = () => { S.code = codeDigits().join(''); };
+function elCodeDialog(){
+  if(!S.signing) return '';
+  const out = S.codeTries<=0, err = S.codeWrong;
+  const errText = out ? 'Попытки закончились. Запросите новый код' : `Код не подходит, проверьте его. Осталось попыток: ${S.codeTries}`;
+  return `<div class="dlg__scrim" data-act="code-close"><div class="dlg dlg--600 dlg--code" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
+    <div class="dlg__hd"><button type="button" class="dlg__x" data-act="code-close" aria-label="Закрыть">${SVG_X}</button></div>
+    <div class="dlg__body">
+      <h3 id="dlg-t" tabindex="-1">Введите код из уведомления</h3>
+      <p class="code__to">Отправили на +7 ··· ··· 45 18</p>
+      <div class="code${err?' code--err code--shake':''}"><div class="code__cells" role="group" aria-label="Код из уведомления, ${CODE_LEN} цифр">
+        ${codeDigits().map((d,i)=>`<input class="code__cell" id="${i?`code-in-${i}`:'code-in'}" data-act="code-cell" data-i="${i}" value="${esc(d)}" inputmode="numeric" pattern="[0-9]*"
+          autocomplete="${i?'off':'one-time-code'}" aria-label="Цифра ${i+1}" ${out||S.signed?'disabled':''} ${err?'aria-invalid="true" aria-describedby="code-err"':''}>`).join('')}
+      </div></div>
+      ${err?`<p class="code__err" id="code-err" role="alert" tabindex="-1">${errText}</p>`:''}
+      ${S.signed?`<p class="code__ok" role="status">Код принят</p>`:''}
+      <div class="code__more">
+        ${S.codeLeft>0
+          ? `<p class="sec">Запросить новый можно через <span id="code-timer">${mmss(S.codeLeft)}</span></p>`
+          : `<button type="button" class="lnk" id="code-resend" data-act="code-resend">Запросить новый код</button>`}
+        <button type="button" class="lnk lnk--pseudo lnk--secondary" id="code-help-btn" data-act="code-help" aria-expanded="${S.codeHelp}" aria-controls="code-help">Не приходит код?</button>
+      </div>
+      ${S.codeHelp?`<div class="note code__help" id="code-help"><span>Проверьте, что телефон в сети и может принимать уведомления. Если номер сменился, обновите его в профиле</span></div>`:''}
+    </div>
+  </div></div>`;
+}
+function signCode(){
+  if(S.signed) return;
+  if(S.codeTries<=0){
+    live.textContent='Попытки закончились. Запросите новый код';
+    (app.querySelector('#code-resend')||app.querySelector('#code-err')||app.querySelector('#code-help-btn'))?.focus();
+    return;
+  }
+  if(S.code.length!==CODE_LEN){
+    live.textContent='Введите пять цифр кода';
+    app.querySelector('#code-in')?.focus();
+    return;
+  }
+  if(S.signing && S.code===WRONG_CODE){
+    S.codeTries--; S.codeWrong=true; S.code=''; S.codeArr=[]; rerenderKeepScroll();
+    const f = app.querySelector('#code-in'); if(f && !f.disabled) f.focus(); else (app.querySelector('#code-resend')||app.querySelector('#code-err')).focus();
+    return;
+  }
+  S.signed=true; clearInterval(codeTimer); rerenderKeepScroll();
+  setTimeout(()=>{S.step='done';S.signing=false;render();window.scrollTo({top:0,behavior:'smooth'});},700);
+}
+let codeTimer = null;
+function startCode(){
+  Object.assign(S, {code:'', codeArr:[], codeLeft:30, codeTries:3, codeWrong:false});
+  clearInterval(codeTimer);
+  codeTimer = setInterval(()=>{
+    if(!S.signing || S.signed){ clearInterval(codeTimer); return; }
+    S.codeLeft--;
+    if(S.codeLeft<=0){
+      clearInterval(codeTimer); const lost = ['code-err','code-in'].includes(document.activeElement.id) && S.codeTries<=0;
+      rerenderKeepScroll(); if(lost || document.activeElement===document.body){ const r=document.getElementById('code-resend'); if(r) r.focus(); }
+      return;
+    }
+    const el = document.getElementById('code-timer'); if(el) el.textContent = mmss(S.codeLeft);
+  }, 1000);
+}
+/* Текст согласия — Modal 500 */
+function elConsentDialog(){
+  if(!S.consent) return '';
+  return `<div class="dlg__scrim" data-act="consent-close"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cns-t">
+    <div class="dlg__hd"><h3 id="cns-t" tabindex="-1">Согласие на списание премии</h3>
+      <button type="button" class="dlg__x" data-act="consent-close" aria-label="Закрыть">${SVG_X}</button></div>
+    <div class="dlg__body"><p class="t-md">${S.channel==='sfa' && S.signway==='paper' ? 'Покажите клиенту состав и стоимость страховки. Для завершения оформления потребуется его подпись на документах.' : `Банк спишет ${RUB(calc().premium)} со счёта ${ACCOUNTS[S.payAccount][0].replace('Расчётный счёт ','')} в день выпуска полиса. Списание разовое, за год вперёд.`}</p></div>
+    <div class="dlg__ft"><button type="button" class="btn btn--48 ${PRI()}" data-act="consent-close">Понятно</button></div>
+  </div></div>`;
+}
+
+/* ── «Подробнее» и «Условия»: UniversalModal справа, 600, фон modal-bg-alt ── */
+function spShell(title, body, foot, intro=null){
+  return `<div class="sp__scrim" data-act="panel-close"><aside class="sp" role="dialog" aria-modal="true" aria-labelledby="sp-title">
+    <div class="sp__hd">${intro?'<span class="sp__spacer"></span>':`<h3 id="sp-title" tabindex="-1">${title}</h3>`}<button type="button" class="dlg__x" data-act="panel-close" aria-label="Закрыть">${SVG_X}</button></div>
+    <div class="sp__body">${intro?`<div class="sp__intro">${intro[0]}<h3 id="sp-title" tabindex="-1">${title}</h3>${intro[1]}</div>`:''}${body}</div>
+    <div class="sp__ft">${foot}</div>
+  </aside></div>`;
+}
+const elDocList = docs => `<ul class="docs">${docs.map(([name,meta])=>`<li>
+  <span class="docs__ico" aria-hidden="true">${SVG_DOC}</span><span class="docs__name">${name}</span>
+  <span class="docs__meta">${meta}</span><span class="docs__dl" aria-hidden="true">${SVG_DL}</span></li>`).join('')}</ul>`;
+function elTermsPanel(){
+  return spShell('Условия страхования',
+    `<div class="plate"><p class="t-md">Демонстрационные условия «${SCHEMA.title}». Состав, лимиты и стоимость приведены для примера и не являются офертой. Окончательные условия зависят от данных о бизнесе и решения страховщика</p></div>
+     <div class="plate">${elDocList(SCHEMA.docs)}</div>`,
+    `<button type="button" class="btn btn--48 btn--secondary" data-act="panel-close">Закрыть</button>`);
+}
+/* Фиксированная программа («коробка»): цена как факт — TableView */
+function elFixedFacts(s){
+  const rows = [['Стоимость за сотрудника', `${RUB(s.price)} в год`], ['Сотрудников в договоре', `до ${SCHEMA.rules.maxEmployees}`]];
+  return `<div class="grp"><h4 class="grp__t">Предварительный расчёт</h4><div class="tv">${rows.map(([k,val])=>`<div class="tv__row"><span class="tv__k">${k}</span><span class="tv__v">${val}</span></div>`).join('')}</div></div>`;
+}
+/* Количество сотрудников: Input 56 со Stepper в правом аддоне (NumberInput), максимум из правил пакета */
+function elEmployeeEstimate(){
+  if(S.step!=='config') return '';
+  const n = S.estimateEmployees, max = SCHEMA.rules.maxEmployees;
+  return `<div class="grp"><div>
+    <div class="field field--number"><label for="estimate-employees">Количество сотрудников</label>
+      <input id="estimate-employees" data-act="emp-estimate" data-mask="count" data-max="${max}" inputmode="numeric" autocomplete="off" value="${n}" placeholder="0" aria-describedby="estimate-hint">
+      <span class="field__addons"><span class="stepper">
+        <button type="button" data-act="emp-step" data-v="-1" aria-label="Уменьшить число сотрудников" ${n===0?'disabled':''}>${SVG_MINUS}</button><i aria-hidden="true"></i>
+        <button type="button" data-act="emp-step" data-v="1" aria-label="Увеличить число сотрудников" ${n===max?'disabled':''}>${SVG_PLUS24}</button></span></span></div>
+    <p class="field__sub" id="estimate-hint">${RUB(sec('dms').price)} на сотрудника в год без платных услуг, до ${max} сотрудников. Данные сотрудников добавьте на следующем шаге</p></div></div>`;
+}
+/* Поле суммы: вводится руками, сохраняются только границы диапазона (как в таблице) */
+function elMoneyField(sid, key, label, hint){
+  const s = sec(sid), id = `sum-${sid}-${key}`;
+  const v = sid==='liability' ? +S.sel.liability.limit || 0 : +S.sel.prop.sums[key] || 0;
+  const err = (S.touched[id] || S.showErrors) ? sumError(sid, key) : '';
+  const part = calcSection(sid).parts.find(p=>p.id===(sid==='liability'?'limit':key));
+  const sub = err || (part ? `${hint} · ${RUB(part.premium)} в год` : hint);
+  const view = amountView(v);
+  return `<div><div class="field field--amount${v?' is-filled':''}${err?' field--err':''}"><label for="${id}">${label}</label>
+      <input id="${id}" data-act="sum-input" data-mask="amount" data-v="${sid}:${key}" inputmode="numeric" autocomplete="off" value="${view}" placeholder="0${THINSP}₽"
+        aria-describedby="${id}-sub" ${err?'aria-invalid="true"':''}>
+      <span class="field__suffix" aria-hidden="true"><b>${view}</b><span>${THINSP}₽</span></span></div>
+    <p class="${err?'field__err':'field__sub'}" id="${id}-sub">${sub}</p></div>`;
+}
+function elSumControls(s){
+  if(s.per==='object') return `<div class="grp"><h4 class="grp__t">Страховые суммы</h4><div class="fields">
+    ${s.objects.map(o=>elMoneyField('prop', o.id, o.name, o.required ? `От ${MLN(o.min)} до ${MLN(o.max)}` : `От ${MLN(o.min)} до ${MLN(o.max)}, пусто — не страхуется`)).join('')}
+  </div></div>`;
+  if(s.per==='limit') return `<div class="grp"><h4 class="grp__t">Лимит ответственности</h4>
+    ${liabilityAllowed() ? '' : `<div class="note"><span>Оформляется только вместе с имуществом или ДМС</span></div>`}
+    ${elMoneyField('liability', 'limit', 'Лимит', `От ${MLN(s.min)} до ${MLN(s.max)}`)}</div>`;
+  return S.step==='config' ? elEmployeeEstimate() : elFixedFacts(s);
+}
+function elModuleControls(s, place='inline'){
+  const sel=S.sel[s.id], disabled=place==='inline'&&!sel.on;
+  return `<div class="module-controls">
+    ${disabled?'<p class="t-sm sec">Включите модуль для настройки</p>':''}
+    <fieldset ${disabled?'disabled':''} aria-label="Условия модуля ${s.name}">
+      ${elSumControls(s)}
+      ${s.options.length?`<div class="grp"><h4 class="grp__t">Платные услуги</h4><div class="opts">${s.options.map(o=>{
+        const id=`opt-${place}-${s.id}-${o.id}`, isOn=sel.opts.includes(o.id);
+        return `<label class="opt" for="${id}">
+          <input type="checkbox" class="module-choice module-choice--check" id="${id}" data-act="opt-input" data-v="${s.id}:${o.id}" ${isOn?'checked':''}>
+          <span class="opt__main"><span class="opt__t">${o.name}</span><span class="opt__s">${o.desc}</span></span>
+          <span class="opt__r">${(([sum,unit])=>`+ ${sum}<small>${unit}</small>`)(optCost(s.id,o))}</span>
+        </label>`;
+      }).join('')}</div></div>`:''}
+    </fieldset>
+    <details class="module-coverage"><summary>Что покрывает модуль</summary><ul class="list">${s.base.map(b=>`<li>${mk()}<span>${b}</span></li>`).join('')}</ul></details>
+  </div>`;
+}
+function elPanel(){
+  if(!S.panel) return '';
+  if(S.panel==='terms') return elTermsPanel();
+  const s = sec(S.panel);
+  /* Как «Подробнее» в макете: иллюстрация и название, факты с иконками,
+     «Что входит в страховку», документы; одна кнопка «Рассчитать» */
+  const facts = s.per==='employee'
+    ? [[SVG_WALLET, `${RUB(minPrice(s.id))} в год за сотрудника`, 'Одна программа для всех сотрудников, фиксированная цена'],
+       [SVG_PEOPLE, 'От 1 сотрудника', 'Сотрудников добавите при оформлении']]
+    : s.per==='limit'
+    ? [[SVG_WALLET, `от ${RUB(minPrice(s.id))} в год`, 'Зависит от лимита ответственности'],
+       [SVG_SHIELD, `Лимит от ${MLN(s.min)} до ${MLN(s.max)}`, 'Только вместе с имуществом или ДМС']]
+    : [[SVG_WALLET, `от ${RUB(minPrice(s.id))} в год`, 'Зависит от страховых сумм'],
+       [SVG_HOUSE, `Отделка от ${MLN(s.objects[0].min)} до ${MLN(s.objects[0].max)}`, 'Товар и оборудование по выбору, до 5 млн ₽ каждое']];
+  return spShell(s.name,
+    `<div class="plate plate--tight">${facts.map(([icon,t,d])=>`<div class="fact"><span class="fact__ico" aria-hidden="true">${icon}</span><span><span class="fact__t">${t}</span><span class="fact__s">${d}</span></span></div>`).join('')}</div>
+      <div class="plate"><h4 class="t-h3">Что входит в страховку</h4><ul class="list">${s.base.map(b=>`<li>${mk()}<span>${b}</span></li>`).join('')}</ul></div>
+      ${s.options.length?`<div class="plate"><h4 class="t-h3">За дополнительную плату</h4><ul class="list">${s.options.map(o=>`<li>${mk()}<span>${o.name}<small>${o.desc}</small></span></li>`).join('')}</ul></div>`:''}
+      <div class="plate">${elDocList(SCHEMA.docs.slice(0,2))}</div>`,
+    `<button type="button" class="btn btn--48 ${PRI()}" data-act="single" data-v="${s.id}">Рассчитать</button>`,
+    [ART[s.id]||ART.pkg, `<p class="t-md">${s.short}</p>`]);
+}
+
+/* ═══════════ КАНАЛ 1 · ИНТЕРНЕТ-БАНК ═══════════════════════════ */
+function nibShell(inner){
+  const MENU_ON = 'Страховки для бизнеса';
+  const menu = ['Все сервисы','Бонусы','|','Новый платёж','Лента операций','Платежи в работе','Импорт реестров','Выписка','Счета','Контрагенты','Справки','Счета на оплату','Страховки для бизнеса','|','Госзакупки'];
+  return `<div class="nib">
+    <aside class="side" ${layer()?'inert':''}>
+      <div class="side__logo"><i aria-hidden="true">Б</i>Бизнес-банк</div>
+      <nav aria-label="Разделы интернет-банка"><ul>
+        ${menu.map(m=>m==='|' ? '</ul><hr><ul>'
+          : `<li class="${m===MENU_ON?'is-on':''}"${m===MENU_ON?' aria-current="page"':''}>${ico(m)}${m}</li>`).join('')}
+      </ul></nav>
+    </aside>
+    <div class="main" ${layer()?'inert':''}>
+      <div class="top">
+        ${S.step==='showcase' || S.step==='done' ? '' : `<button type="button" class="top__back" data-act="back">${SVG_BACK}Назад</button>`}
+        <div class="top__spacer"></div>
+        ${elChannel()}
+        <div class="top__client"><div class="top__logo" aria-hidden="true">П</div><div><b>${CLIENT.name}</b><span>Набоков И. Д.</span></div></div>
+        <div class="top__role"><i aria-hidden="true"></i>Предприниматель</div>
+      </div>
+      <div class="body">${inner}</div>
+    </div>
+    ${elPanel()}${elStaffForm()}${elCodeDialog()}${elConsentDialog()}${elToast()}
+  </div>`;
+}
+function elSingleCard(sid, title, subtitle, facts, art){
+  return `<div class="card pcard">
+    <div class="pcard__body">
+      <div class="pcard__hd"><h3 class="t-h3">${title}</h3><p class="t-md">${subtitle}</p></div>
+      <div class="pcard__facts">${facts.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
+      <div class="pcard__cta"><button type="button" class="btn btn--secondary" data-act="single" data-v="${sid}">Рассчитать</button><button type="button" class="btn btn--transparent" data-act="panel" data-v="${sid}">Подробнее</button></div>
+    </div>
+    <div class="pcard__art">${art}</div>
+  </div>`;
+}
+function nibShowcase(){
+  return nibShell(`<div class="page">
+    <div class="page__hd"><h1 class="t-h1">Страховки для бизнеса</h1><p class="t-md">Страховые услуги оказывает страховая компания-партнёр банка</p></div>
+    ${elPackagePlacements()}
+    <section class="sect" id="standalone-insurance" aria-labelledby="standalone-insurance-title">
+      <div class="page__hd"><h2 class="t-h3" id="standalone-insurance-title">Отдельные страховки</h2><p class="t-md">Если нужен один вид защиты, его можно оформить без комплексного пакета</p></div>
+      <div class="grid">
+        ${elSingleCard('dms','ДМС','Онлайн-консультации и медицинская помощь в клиниках программы',[['Стоимость за сотрудника',`${RUB(minPrice('dms'))} в год`]],ART.dms)}
+      </div>
+    </section>
+  </div>`);
+}
+/* Проверка состава — тексты и порядок как в ячейке «Проверка пакета» листа «Калькулятор» */
+function configCheck(){
+  const sel = S.sel, R = SCHEMA.rules, p = sec('prop'), l = sec('liability'), n = SCHEMA.sections.filter(s=>sel[s.id].on).length;
+  const out = (v,o) => v < o.min || v > o.max;
+  const sums = sel.prop.sums, emp = quoteEmployees();
+  if(sel.liability.on && !liabilityAllowed()) return ['liability','ГО нельзя оформить отдельно: добавьте имущество или ДМС'];
+  if(n < R.minModules || n > R.maxModules) return [null,`Выберите от ${R.minModules} до ${R.maxModules} модулей`];
+  if(sel.prop.on && !+sums.build) return ['prop','Имущество: укажите страховую сумму по отделке'];
+  if(sel.prop.on && out(+sums.build, p.objects[0])) return ['prop','Имущество: сумма по отделке вне диапазона'];
+  if(sel.prop.on && +sums.stock > 0 && out(+sums.stock, p.objects[1])) return ['prop','Имущество: сумма по товарным запасам вне диапазона'];
+  if(sel.prop.on && +sums.equip > 0 && out(+sums.equip, p.objects[2])) return ['prop','Имущество: сумма по оборудованию вне диапазона'];
+  if(sel.dms.on && !emp) return ['dms','ДМС: укажите количество сотрудников'];
+  if(sel.dms.on && emp > R.maxEmployees) return ['dms',`ДМС: не больше ${R.maxEmployees} сотрудников`];
+  if(sel.liability.on && !+sel.liability.limit) return ['liability','ГО: укажите лимит'];
+  if(sel.liability.on && out(+sel.liability.limit, l)) return ['liability','ГО: лимит вне диапазона'];
+  return [null,''];
+}
+function configBlock(){ return configCheck()[1]; }
+function badModule(){ return configCheck()[0]; }
+function detailsBlock(){
+  const c = calc();
+  if(S.sel.dms.on && !EMPN()) return 'Добавьте в ДМС хотя бы одного сотрудника';
+  if(S.sel.dms.on && EMPN() > SCHEMA.rules.maxEmployees) return `ДМС: не больше ${SCHEMA.rules.maxEmployees} сотрудников`;
+  const byAddr = S.sel.prop.on || S.sel.liability.on;
+  if(byAddr && !S.addresses[0].addr.trim()) return 'Укажите адрес помещения';
+  return '';
+}
+/* Под блоками, как в макете: «Сумма» (Amount), второй показатель и Button 56 */
+function flowBar(target, block){
+  const c = calc();
+  const second = S.sel.dms.on ? ['Застрахованные', String(target==='details' ? quoteEmployees() : EMPN())]
+    : ['Модулей', String(calc().onIds.length)];
+  return `<div class="flow">
+    ${block ? `<p class="flow__msg" id="config-block">${block}</p>`
+      : `<div class="flow__nums"><div class="flow__num"><span>${target==='details'?'Предварительная сумма':'Сумма'}</span><b>${AMOUNT(c.premium)}</b></div>
+      <div class="flow__num"><span>${second[0]}</span><b>${second[1]}</b></div></div>`}
+    <div class="actions"><button type="button" class="btn btn--56 ${PRI()}" data-act="go" data-v="${target}" ${block?'aria-describedby="config-block"':''}>Продолжить</button><button type="button" class="btn btn--56 btn--transparent" data-act="terms">Условия страхования</button></div>
+  </div>`;
+}
+function configBar(){ return flowBar('details',configBlock()); }
+function detailsBar(){ return flowBar('checkout',detailsBlock()); }
+const prodTitle = () => S.flow==='single' && S.singleModule ? sec(S.singleModule).name : SCHEMA.title;
+function nibConfig(){
+  const isPackage = S.flow==='package';
+  return nibShell(`<div class="page">
+    <div class="page__hd${isPackage?' package-landing__head':''}"><h1 class="t-h1">${prodTitle()}</h1>
+      <p>${isPackage?'Имущество, здоровье сотрудников и ответственность перед третьими лицами':'Оформление страховки'}</p>
+      ${isPackage?'<p class="t-sm">Цены и лимиты показаны для примера</p>':''}</div>
+    ${isPackage?`<section class="sect package-landing__benefits" aria-labelledby="package-benefits-title">
+      <h2 class="t-h3" id="package-benefits-title">Как защита помогает бизнесу</h2>
+      <ul class="package-benefits">
+        <li class="card package-benefit">
+          <div class="package-benefit__head"><h3 class="t-h4">Защита имущества</h3>${ART.prop}</div>
+          <p>Ремонт и замена отделки, оборудования и товара после пожара, залива или кражи</p>
+        </li>
+        <li class="card package-benefit">
+          <div class="package-benefit__head"><h3 class="t-h4">ДМС</h3>${ART.dms}</div>
+          <p>Консультации врачей, приём в клиниках и обследования для сотрудников по программе</p>
+        </li>
+        <li class="card package-benefit">
+          <div class="package-benefit__head"><h3 class="t-h4">Гражданская ответственность</h3><span class="benefit-people">${ico('Контрагенты')}</span></div>
+          <p>Возмещение ущерба посетителям, соседям и арендодателю, причинённого деятельностью бизнеса</p>
+        </li>
+      </ul>
+    </section>`:''}
+    <div class="cols">
+      <div class="colmain">
+        <section class="block" id="package-customization"><div class="block__hd"><h2 class="t-h3">${isPackage?'Состав защиты':'Параметры страхования'}</h2>
+          ${isPackage?`<p>Выберите от ${SCHEMA.rules.minModules} до ${SCHEMA.rules.maxModules} модулей. Гражданская ответственность — только вместе с имуществом или ДМС</p>`:''}</div>
+          ${elWarn()}${elSections()}</section>
+        ${configBar()}
+      </div>
+      <div class="rail">${elSteps(0)}</div>
+    </div>
+  </div>`);
+}
+function nibDetails(){
+  const needsAddress = S.sel.prop.on || S.sel.liability.on;
+  return nibShell(`<div class="page">
+    <div class="page__hd"><h1 class="t-h1">${prodTitle()}</h1><p>Оформление страховки</p></div>
+    <div class="cols"><div class="colmain">
+      ${needsAddress ? `<section class="block"><h2 class="t-h3">Адрес</h2>${elParams()}</section>` : ''}
+      ${S.sel.dms.on ? `<section class="block">${elStaff()}</section>` : ''}
+      ${elAccount()}
+      ${detailsBar()}
+    </div><div class="rail">${elSteps(1)}</div></div>
+  </div>`);
+}
+function nibCheckout(){
+  return nibShell(`<div class="page">
+    <div class="page__hd"><h1 class="t-h1">${prodTitle()}</h1><p>Оформление страховки</p></div>
+    <div class="cols">
+      <div class="colmain">${elCheckoutBlocks()}</div>
+      <div class="rail">${elSteps(2)}</div>
+    </div>
+  </div>`);
+}
+/* Результат — как «Страховой полис оформлен» в макете, но честно для демо */
+function elDone(title, text, extra, back){
+  return `<div class="done">
+    <div class="done__card">
+      <div class="done__ico" aria-hidden="true">${svg24('<path d="m9.5 15.6 9.2-9.2 1.4 1.4L9.5 18.4 3.9 12.8l1.4-1.4z"/>')}</div>
+      <h1 class="t-h3">${title}</h1>
+      <p class="t-sm sec">${text}</p>
+      <button type="button" class="btn btn--secondary" data-act="go" data-v="showcase">${back}</button>
+    </div>
+    ${extra}
+  </div>`;
+}
+function nibDone(){
+  return nibShell(`<div class="page">
+    <div class="page__hd"><h1 class="t-h1">${prodTitle()}</h1></div>
+    ${elDone('Демонстрация завершена', `Полис не оформлен, письмо на ${esc(S.payMail)} не отправлено, деньги не списаны`, elPolicy(), 'К страховкам')}
+  </div>`);
+}
+
+/* ═══════════ КАНАЛ 2 · SFA ═════════════════════════════════════
+   Оформление и счёт — часть страницы, а не модалка: правило дизайн-
+   системы разрешает модалкой только точечное подтверждение, не
+   многошаговую настройку. */
+function sfaShell(content){
+  const rail = ['Работа','Задачи','Сделки','Клиенты','Продукты','Отчёты'];
+  return `<div class="sfa">
+    <aside class="sfa__rail" ${layer()?'inert':''}><b>SFA</b>${rail.map(r=>`<span class="${r==='Клиенты'?'is-on':''}">${ico(r)}${r}</span>`).join('')}</aside>
+    <div class="sfa__main" ${layer()?'inert':''}>
+      <div class="sfa__head"><b>${CLIENT.name}</b><span class="sfa__inn">ИНН ${CLIENT.inn}</span><span class="sfa__okved">${CLIENT.okved} · ${CLIENT.okvedName}</span><span class="status status--green">Активный</span><span class="sfa__contact">Набоков Иван Дмитриевич · +7 (9••) •••-45-18</span>${elChannel()}</div>
+      <div class="sfa__tabs">${['Карточка','Продукты','Страхование','Сделки','История'].map(t=>`<span class="${t==='Страхование'?'is-on':''}">${t}</span>`).join('')}</div>
+      <div class="sfa__work">${content}</div>
+    </div>
+    ${elPanel()}${elStaffForm()}${elCodeDialog()}${elConsentDialog()}${elToast()}
+  </div>`;
+}
+function elSfaRecommendation(){
+  const savedStaff = S.staff;
+  S.staff = [];
+  const c = presetCalc('reco');
+  S.staff = savedStaff;
+  const perEmployee = presetEmployeeIncrement('reco');
+  const reasons = [
+    ['Имущество магазина','Уточнить стоимость отделки, оборудования и товара по каждому адресу'],
+    ['Сотрудники','Уточнить количество для расчёта ДМС и необходимость платных услуг'],
+    ['Посетители и соседи','Выбрать отдельный лимит ответственности за ущерб третьим лицам']
+  ];
+  return `<section class="sfa-reco" aria-labelledby="sfa-reco-title">
+    <div class="sfa-reco__head">
+      <div><h2 class="t-h3" id="sfa-reco-title">Что предложить клиенту</h2>
+        <p class="t-md">Защита имущества, ДМС и гражданская ответственность для розничного магазина с сотрудниками</p></div>
+      <span class="status status--24 status--green">Пример предложения</span>
+    </div>
+    <div class="sfa-reco__body">
+      <div class="sfa-reco__main">
+        <div class="sfa-reco__content">
+          <div class="sfa-reco__why"><h3>Почему предлагаем</h3><ul class="sfa-reco__signals">${reasons.map(([signal,why])=>`<li class="sfa-reco__reason">${mk()}<span><b>${signal}</b><span>${why}</span></span></li>`).join('')}</ul></div>
+          <div class="sfa-sales"><h3>Что сказать клиенту</h3><ul class="sfa-sales__list">${SFA_SALES_POINTS.map(point=>`<li class="sfa-sales__item">${mk()}<span>${point}</span></li>`).join('')}</ul></div>
+        </div>
+      </div>
+      <div class="sfa-reco__aside">
+        <div class="sfa-reco__price"><span>Предварительная стоимость</span><b>от ${RUB(c.premium)} в год</b><small>Дополнительно ${RUB(perEmployee)} в год за сотрудника с ДМС</small></div>
+        <p class="t-sm sec">Перед оформлением уточните адреса, стоимость имущества, лимит ответственности и число сотрудников</p>
+        <div class="sfa-reco__actions"><button type="button" class="btn btn--48 btn--primary" data-act="preset-go" data-v="reco">Перейти к оформлению</button></div>
+      </div>
+    </div>
+  </section>`;
+}
+function sfaProducts(){
+  const single = (sid,title,kv)=>`<div class="prow">
+      <div class="prow__main"><div class="prow__t">${title}</div><div class="kv kv--3">${kv.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div></div>
+      <div class="prow__btns"><button type="button" class="btn btn--secondary" data-act="single" data-v="${sid}">Рассчитать</button><button type="button" class="btn btn--transparent" data-act="panel" data-v="${sid}">Подробнее</button></div>
+    </div>`;
+  return `<div class="sfa__panel">
+    <div class="page__hd"><h1 class="t-h2">Страхование</h1><p class="t-md">Предложения и оформление для ${CLIENT.name}</p></div>
+    ${elSfaRecommendation()}
+    <section class="sect">
+      <div class="page__hd"><h2 class="t-h3">Отдельные страховки</h2><p class="t-md">Их можно оформить отдельно, без комплексного пакета</p></div>
+      <div class="cells">
+      ${single('dms','ДМС',[['Стоимость за сотрудника',`${RUB(minPrice('dms'))} в год`]])}
+      ${single('prop','Защита имущества',[['Стоимость',`от ${RUB(minPrice('prop'))} в год`],['Отделка',`от ${MLN(sec('prop').objects[0].min)} до ${MLN(sec('prop').objects[0].max)}`],['Товар и оборудование',`до ${MLN(sec('prop').objects[1].max)}`]])}
+      </div>
+    </section>
+  </div>`;
+}
+function sfaShowcase(){ return sfaShell(sfaProducts()); }
+const sfaBack = () => `<button type="button" class="top__back sfa__back" data-act="back">${SVG_BACK}Назад</button>`;
+function sfaConfig(){
+  return sfaShell(`<div class="page">
+    ${sfaBack()}
+    <div class="page__hd"><h1 class="t-h2">${prodTitle()}</h1><p>Оформление страховки</p></div>
+    <div class="cols">
+      <div class="colmain">
+        <section class="block"><h2 class="t-h3">${S.flow==='package'?'Состав защиты':'Параметры страхования'}</h2>${elWarn()}${elSections()}</section>
+        ${configBar()}
+      </div>
+      <div class="rail">${elSteps(0)}</div>
+    </div>
+  </div>`);
+}
+function sfaDetails(){
+  const needsAddress = S.sel.prop.on || S.sel.liability.on;
+  return sfaShell(`<div class="page">
+    ${sfaBack()}
+    <div class="page__hd"><h1 class="t-h2">${prodTitle()}</h1><p>Оформление страховки</p></div>
+    <div class="cols"><div class="colmain">
+      ${needsAddress ? `<section class="block"><h2 class="t-h3">Адрес</h2>${elParams()}</section>` : ''}
+      ${S.sel.dms.on ? `<section class="block">${elStaff()}</section>` : ''}
+      ${elAccount()}
+      ${detailsBar()}
+    </div><div class="rail">${elSteps(1)}</div></div>
+  </div>`);
+}
+function sfaCheckout(){
+  return sfaShell(`<div class="page">
+    ${sfaBack()}
+    <div class="page__hd"><h1 class="t-h2">${prodTitle()}</h1><p>Оформление страховки</p></div>
+    <div class="cols">
+      <div class="colmain">${elCheckoutBlocks()}</div>
+      <div class="rail">${elSteps(2)}</div>
+    </div>
+  </div>`);
+}
+function sfaDone(){
+  const paper = S.signway==='paper';
+  return sfaShell(`<div class="page">
+    ${paper
+      ? elDone('Образец комплекта для подписи', 'Документы не сформированы и не отправлены клиенту',
+          `<div class="policy"><div class="policy__hd"><div class="t-h3">Комплект для подписи</div><div class="t-sm sec">${CLIENT.name} · предварительная стоимость ${RUB(calc().premium)} в год</div></div>${elDocs()}</div>`, 'К продуктам клиента')
+      : elDone('Демонстрация завершена', `Полис не оформлен, письмо на ${esc(S.payMail)} не отправлено, деньги не списаны`, elPolicy(), 'К продуктам клиента')}
+  </div>`);
+}
+
+/* ═══════════ РЕНДЕР ════════════════════════════════════════════ */
+const VIEWS = {
+  nib:{showcase:nibShowcase, config:nibConfig, details:nibDetails, checkout:nibCheckout, done:nibDone},
+  sfa:{showcase:sfaShowcase, config:sfaConfig, details:sfaDetails, checkout:sfaCheckout, done:sfaDone}
+};
+const FLOW = ['showcase','config','details','checkout','done'];
+const app = document.getElementById('app');
+const live = document.getElementById('live');
+/* Верхний слой поверх страницы: диалог согласия → диалог ПЭП → боковая панель.
+   При открытии фокус уходит в заголовок слоя, при закрытии — на кнопку, открывшую его. */
+const layer = () => S.consent ? 'consent' : (S.signing && S.step==='checkout') ? 'code' : S.staffEdit!==null && S.staffDraft ? 'staff' : S.panel ? 'panel:'+S.panel : null;
+/* Окно кода открывается с кареткой в первой ячейке, как CodeInput в приложении */
+const LAYER_TITLE = {consent:'#cns-t', code:'#code-in', staff:'#stf-t'};
+const layerOpener = l => l==='consent' ? '[data-act="consent"]' : l==='code' ? '[data-act="start-sign"]' : l==='staff' ? '[data-act="staff-add"]'
+  : l==='panel:terms' ? '[data-act="terms"]' : `[data-act="panel"][data-v="${l.slice(6)}"]`;
+let lastLayer = null;
+function afterRender(){
+  const c = calc();
+  live.textContent = `Предварительная стоимость ${RUB(c.premium)} в год. Лимиты по каждой программе указаны отдельно`;
+  const l = layer();
+  if(l && l !== lastLayer){
+    const h = app.querySelector(LAYER_TITLE[l] || '#sp-title'); if(h) h.focus();
+  } else if(!l && lastLayer){
+    const b = app.querySelector(layerOpener(lastLayer)); if(b) b.focus();
+  }
+  lastLayer = l;
+}
+/* Перерисовка как в React: новая разметка накладывается на существующий DOM,
+   меняется только то, что изменилось. Поле с фокусом не пересоздаётся —
+   каретка, выделение, открытые <details> и анимации остаются на месте. */
+const sameKind = (a,b) => a.nodeType===b.nodeType && (a.nodeType!==1 || a.tagName===b.tagName);
+function morphChildren(from, to){
+  const byId = new Map([...from.children].filter(n=>n.id).map(n=>[n.id,n]));
+  let i = 0;
+  for(const next of [...to.childNodes]){
+    const cur = from.childNodes[i];
+    let match = next.nodeType===1 && next.id ? byId.get(next.id) : null;
+    if(!match && cur && sameKind(cur,next) && !(cur.nodeType===1 && cur.id && cur.id!==next.id)) match = cur;
+    if(match){ if(match!==cur) from.insertBefore(match, cur||null); morphNode(match, next); }
+    else from.insertBefore(next, cur||null);
+    i++;
+  }
+  while(from.childNodes.length > i) from.removeChild(from.lastChild);
+}
+function morphNode(a, b){
+  if(a.nodeType!==1){ if(a.nodeValue!==b.nodeValue) a.nodeValue = b.nodeValue; return; }
+  for(const {name} of [...a.attributes]) if(!b.hasAttribute(name) && !(name==='open' && a.tagName==='DETAILS')) a.removeAttribute(name);
+  for(const {name,value} of [...b.attributes]) if(a.getAttribute(name)!==value) a.setAttribute(name, value);
+  if(a.tagName==='INPUT'){
+    if(a.type==='checkbox' || a.type==='radio') a.checked = b.hasAttribute('checked');
+    /* Поле в фокусе ведёт сам пользователь; ячейки кода — управляемые, их значение всегда из состояния */
+    else if((a!==document.activeElement || a.dataset.act==='code-cell') && a.value!==(b.getAttribute('value')??'')) a.value = b.getAttribute('value')??'';
+  }
+  morphChildren(a, b);
+  if(a.tagName==='SELECT'){ const i=[...a.options].findIndex(o=>o.hasAttribute('selected')); if(i>=0 && a.selectedIndex!==i) a.selectedIndex = i; }
+}
+function render(){
+  const tpl = document.createElement('template');
+  tpl.innerHTML = VIEWS[S.channel][S.step]();
+  morphChildren(app, tpl.content);
+  afterRender();
+}
+function rerenderKeepScroll(){
+  const a=document.activeElement, id=a&&a.id;
+  render();
+  if(id && !app.contains(a)){ const el=document.getElementById(id); if(el && !el.disabled) el.focus({preventScroll:true}); }
+}
+/* Ввод через маску: форматирует, ставит каретку, отклоняет лишнее (как AmountInput) */
+function rejectInput(el){
+  const f = el.closest('.field'); if(!f) return;
+  const ph = f.classList.contains('field--reject0') ? 1 : 0;
+  f.classList.remove('field--reject0','field--reject1'); f.classList.add(`field--reject${ph}`);
+}
+function applyMask(el){
+  const kind = el.dataset.mask, prev = el.dataset.prev ?? el.getAttribute('value') ?? '';
+  const r = maskValue(kind, el.value, el.selectionStart ?? el.value.length, prev);
+  const max = el.dataset.max ? +el.dataset.max : Infinity;
+  if(!r || (r.digits && +r.digits > max)){
+    const back = Math.max(0, (el.selectionStart ?? 0) - (el.value.length - prev.length));
+    el.value = prev; el.setSelectionRange(back, back);
+    /* вспышка отказа — только у числовых полей (AmountInput, NumberInput); маски телефона и даты молча игнорируют лишнее */
+    if(kind==='amount' || kind==='count') rejectInput(el);
+    return null;
+  }
+  el.value = r.value; el.dataset.prev = r.value;
+  if(document.activeElement===el) el.setSelectionRange(r.caret, r.caret);
+  return r;
+}
+
+/* ═══════════ СОБЫТИЯ ═══════════════════════════════════════════ */
+app.addEventListener('click', e=>{
+  const t = e.target.closest('[data-act]');
+  /* Меню строки сотрудника закрывается по клику мимо него */
+  if(S.staffMenu!=null && !e.target.closest?.('.menu, [data-act="staff-menu"]')){ S.staffMenu=null; if(!t) { rerenderKeepScroll(); return; } }
+  if(!t || t.disabled) return;
+  const act = t.dataset.act, v = t.dataset.v;
+  if(act==='go'){
+    if(v==='details'){
+      const block=configBlock();
+      if(block){ live.textContent=block; S.showErrors=true; const bad=badModule(); if(bad && S.sel[bad].on){ S.expandedModule=bad; rerenderKeepScroll(); }
+        (app.querySelector('[aria-invalid="true"]')||app.querySelector('#estimate-employees')||app.querySelector('[data-act="module-input"]'))?.focus(); return; }
+    }
+    if(v==='checkout'){
+      const block=detailsBlock();
+      if(block){
+        live.textContent=block;
+        const staffTarget=S.staffEdit!==null ? '#st-fio' : S.staff.length ? '[data-act="staff-menu"]' : '[data-act="staff-add"]';
+        const target=S.sel.dms.on && !EMPN() ? staffTarget : `#addr-${S.addresses.findIndex(a=>!a.addr.trim())}`;
+        app.querySelector(target)?.focus();
+        return;
+      }
+    }
+    S.step = v; S.panel=null; if(v==='showcase'){S.agreed=false;S.signed=false;S.signing=false;S.signway='pep';} S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'});
+  }
+  else if(act==='back'){ const i=FLOW.indexOf(S.step); S.step=FLOW[Math.max(0,i-1)]; render(); }
+  else if(act==='section'){ toggleSection(v); rerenderKeepScroll(); }
+  else if(act==='module-open'){ S.expandedModule=S.expandedModule===v?null:v; rerenderKeepScroll(); }
+  else if(act==='single'){ SCHEMA.sections.forEach(s=>{ S.sel[s.id].on = s.id===v; }); S.flow='single'; S.singleModule=v; S.expandedModule=v; S.panel=null; S.warn=null; S.step='config'; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  else if(act==='package-open'){ S.flow='package'; S.singleModule=null; S.expandedModule=null; S.step='config'; S.panel=null; S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  else if(act==='panel'){ S.panel = v; S.warn=null; rerenderKeepScroll(); }
+  else if(act==='terms'){ S.panel = 'terms'; S.warn=null; rerenderKeepScroll(); }
+  else if(act==='channel'){
+    if(v===S.channel) return;
+    S.channel = v; S.panel = null; S.warn = null;
+    render(); window.scrollTo(0,0);
+    app.querySelector(`[data-act="channel"][data-v="${v}"]`)?.focus({preventScroll:true});
+  }
+  else if(act==='panel-close'){ if(t.classList.contains('sp__scrim') && e.target!==t) return; S.panel = null; S.warn=null; rerenderKeepScroll(); }
+  else if(act==='preset-go'){
+    applyPreset(v); S.flow='package'; S.singleModule=null; S.expandedModule=null; S.step='config'; S.panel=null; S.warn=null;
+    render(); window.scrollTo({top:0,behavior:'smooth'});
+  }
+  else if(act==='preset'){ applyPreset(v); rerenderKeepScroll(); }
+  else if(act==='emp-step'){
+    S.estimateEmployees=Math.max(0,Math.min(SCHEMA.rules.maxEmployees,S.estimateEmployees+Number(v)));
+    rerenderKeepScroll();
+  }
+  else if(act==='staff-add'){ S.staffEdit='new'; S.staffDraft={fio:'',dob:'',phone:'',email:''}; S.staffErr=null; rerenderKeepScroll(); }
+  else if(act==='staff-menu'){ S.staffMenu = S.staffMenu===+v ? null : +v; rerenderKeepScroll(); }
+  else if(act==='staff-edit'){ S.staffMenu=null; S.staffEdit=+v; S.staffDraft={...S.staff[+v]}; S.staffErr=null; rerenderKeepScroll(); }
+  else if(act==='staff-cancel'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.staffEdit=null; S.staffDraft=null; S.staffErr=null; rerenderKeepScroll(); }
+  else if(act==='toast-close'){ S.toast=null; rerenderKeepScroll(); }
+  else if(act==='staff-save'){
+    const d = S.staffDraft;
+    S.staffErr = staffErrors(d);
+    if(Object.keys(S.staffErr).length){ rerenderKeepScroll(); const f=app.querySelector('[aria-invalid="true"]'); if(f) f.focus(); return; }
+    if(d.phone.trim()) d.phone = fmtPhone(d.phone);
+    d.fio = d.fio.trim().replace(/\s+/g,' '); d.email = d.email.trim(); d.dob = d.dob.trim();
+    S.staffErr = null;
+    const isNew = S.staffEdit==='new';
+    if(isNew) S.staff.push({...d, on:true});
+    else S.staff[S.staffEdit] = {...S.staff[S.staffEdit], ...d, on:true};
+    S.staffEdit=null; S.staffDraft=null; showToast(isNew?'Сотрудник добавлен':'Данные сотрудника сохранены'); rerenderKeepScroll();
+  }
+  else if(act==='staff-del'){ S.staffMenu=null; S.staff.splice(+v,1); if(S.staffEdit===+v){S.staffEdit=null;S.staffDraft=null;} rerenderKeepScroll(); app.querySelector('[data-act="staff-add"]')?.focus(); }
+  else if(act==='signway'){ S.signway = v; rerenderKeepScroll(); }
+  else if(act==='consent'){ S.consent = true; rerenderKeepScroll(); }
+  else if(act==='consent-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.consent = false; rerenderKeepScroll(); }
+  else if(act==='code-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.signing = false; clearInterval(codeTimer); rerenderKeepScroll(); }
+  else if(act==='agree'){ S.agreed = !S.agreed; rerenderKeepScroll(); }
+  else if(act==='start-sign'){
+    if(!S.agreed){
+      live.textContent='Подтвердите согласие перед продолжением';
+      app.querySelector('[data-act="agree"]')?.focus();
+      return;
+    }
+    S.payMailError = VALID.email(S.payMail) || null;
+    if(S.payMailError){ rerenderKeepScroll(); app.querySelector('#pay-mail')?.focus(); return; }
+    if(S.channel==='sfa' && S.signway==='paper'){
+      setTimeout(()=>{S.step='done';S.signing=false;render();window.scrollTo({top:0,behavior:'smooth'});},700);
+    } else { S.signing=true; S.codeHelp=false; startCode(); rerenderKeepScroll(); }
+  }
+  else if(act==='sign'){ signCode(); }
+  else if(act==='code-resend'){ startCode(); rerenderKeepScroll(); const f=app.querySelector('#code-in'); if(f) f.focus(); }
+  else if(act==='code-help'){ S.codeHelp=!S.codeHelp; rerenderKeepScroll(); }
+});
+app.addEventListener('input', e=>{
+  const masked = e.target.closest('[data-mask]');
+  let r = null;
+  if(masked){ r = applyMask(masked); if(!r) return; }
+  const money=e.target.closest('[data-act="sum-input"]');
+  if(money){
+    const [sid,key]=money.dataset.v.split(':'), n=+r.digits || 0;
+    if(sid==='liability') S.sel.liability.limit=n; else S.sel.prop.sums[key]=n;
+    rerenderKeepScroll();
+    return;
+  }
+  const estimate=e.target.closest('[data-act="emp-estimate"]');
+  if(estimate){
+    S.estimateEmployees=+r.digits || 0;
+    rerenderKeepScroll();
+    return;
+  }
+  const a = e.target.closest('[data-act="addr"]');
+  if(a){
+    S.addresses[+a.dataset.v].addr = a.value;
+    rerenderKeepScroll();
+    return;
+  }
+  const mail = e.target.closest('[data-act="pay-mail"]');
+  if(mail){
+    S.payMail = mail.value;
+    if(S.payMailError){
+      S.payMailError = null;
+      mail.removeAttribute('aria-invalid'); mail.removeAttribute('aria-describedby');
+      mail.closest('.field')?.classList.remove('field--err');
+      app.querySelector('#pay-mail-err')?.remove();
+    }
+    return;
+  }
+  /* CodeInput: цифра — в свою ячейку, вставка раскладывается по ячейкам, фокус уходит дальше */
+  const cell = e.target.closest('[data-act="code-cell"]');
+  if(cell){
+    const i = +cell.dataset.i, d = cell.value.replace(/\D/g,'');
+    if(!d){ cell.value = S.codeArr[i]||''; return; }
+    d.split('').forEach((ch,k)=>{ if(i+k < CODE_LEN) S.codeArr[i+k] = ch; });
+    syncCode(); cell.value = S.codeArr[i];
+    const next = Math.min(i + d.length, CODE_LEN - 1);
+    S.codeWrong = false;
+    rerenderKeepScroll();
+    if(next!==i) app.querySelector(`[data-act="code-cell"][data-i="${next}"]`)?.focus();
+    if(S.code.length===CODE_LEN) signCode();
+    return;
+  }
+  const f = e.target.closest('[data-act="staff-f"]');
+  if(f && S.staffDraft){
+    S.staffDraft[f.dataset.v] = f.value;
+    if(S.staffErr && S.staffErr[f.dataset.v] && !VALID[f.dataset.v](f.value)){
+      delete S.staffErr[f.dataset.v]; f.removeAttribute('aria-invalid'); f.closest('.field').classList.remove('field--err');
+      const e=document.getElementById(`st-${f.dataset.v}-err`); if(e) e.remove();
+    }
+  }
+});
+app.addEventListener('change', e=>{
+  const t = e.target.closest('[data-act]'); if(!t) return;
+  if(t.dataset.act==='module-input'){
+    const id=t.dataset.v; S.sel[id].on=t.checked;
+    if(t.checked) S.expandedModule=id;
+    else if(S.expandedModule===id) S.expandedModule=null;
+    S.warn=null; rerenderKeepScroll(); return;
+  }
+  if(t.dataset.act==='sum-input'){ S.touched[t.id]=true; rerenderKeepScroll(); return; }
+  if(t.dataset.act==='opt-input'){
+    const [sid,oid]=t.dataset.v.split(':');
+    S.sel[sid].opts=t.checked?[...S.sel[sid].opts.filter(x=>x!==oid),oid]:S.sel[sid].opts.filter(x=>x!==oid);
+    S.warn=null; rerenderKeepScroll(); return;
+  }
+  if(t.dataset.act==='pay-acc'){ S.payAccount = +t.value; rerenderKeepScroll(); return; }
+
+});
+/* Esc закрывает верхний слой: диалог подтверждения → боковая панель раздела */
+/* Клавиши в полях с маской: Backspace/Delete перешагивают разделитель и стирают цифру за ним */
+app.addEventListener('keydown', e=>{
+  const el = e.target;
+  if(el.dataset?.mask && (e.key==='Backspace' || e.key==='Delete') && el.selectionStart===el.selectionEnd){
+    const p = el.selectionStart, pre = MASKS[el.dataset.mask].prefix?.length || 0;
+    if(e.key==='Backspace' && p > pre && /\D/.test(el.value[p-1])) el.setSelectionRange(p-1, p-1);
+    if(e.key==='Delete' && p < el.value.length && /\D/.test(el.value[p])) el.setSelectionRange(p+1, p+1);
+    if(e.key==='Backspace' && p <= pre && pre){ e.preventDefault(); }
+  }
+  if(el.dataset?.act==='code-cell'){
+    const i = +el.dataset.i, go = j => app.querySelector(`[data-act="code-cell"][data-i="${j}"]`)?.focus();
+    if(e.key==='Backspace'){ e.preventDefault(); const t = S.codeArr[i] ? i : Math.max(i-1,0); S.codeArr[t]=''; syncCode(); rerenderKeepScroll(); go(t); }
+    else if(e.key==='Delete'){ e.preventDefault(); S.codeArr[i]=''; syncCode(); rerenderKeepScroll(); }
+    else if(e.key==='ArrowLeft'){ e.preventDefault(); if(i>0) go(i-1); }
+    else if(e.key==='ArrowRight'){ e.preventDefault(); if(i<CODE_LEN-1) go(i+1); }
+    else if(e.key==='ArrowUp' || e.key==='ArrowDown'){ e.preventDefault(); }
+  }
+});
+/* CodeInput: фокус в пустой код всегда начинается с первой ячейки; цифра в ячейке выделяется */
+app.addEventListener('focusin', e=>{
+  const el = e.target;
+  if(el.dataset?.act==='code-cell'){
+    if(+el.dataset.i > 0 && !S.codeArr[0]){ app.querySelector('#code-in')?.focus(); return; }
+    if(el.value) el.select();
+  }
+  if(el.dataset?.mask) el.dataset.prev = el.value;
+});
+/* Ведущие нули убираются при уходе из поля, как в AmountInput: значение берётся из состояния */
+app.addEventListener('focusout', e=>{
+  const m = e.target.dataset?.mask;
+  if(m==='amount' || m==='count') setTimeout(rerenderKeepScroll);
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.dataset?.act==='code-cell'){ signCode(); return; }
+  if(e.key !== 'Escape') return;
+  if(S.staffMenu!=null){ const i=S.staffMenu; S.staffMenu=null; rerenderKeepScroll(); app.querySelector(`[data-act="staff-menu"][data-v="${i}"]`)?.focus(); return; }
+  if(S.consent){ S.consent = false; rerenderKeepScroll(); return; }
+  if(S.staffEdit!==null){ S.staffEdit=null; S.staffDraft=null; S.staffErr=null; rerenderKeepScroll(); return; }
+  if(S.signing && !S.signed){ S.signing = false; clearInterval(codeTimer); rerenderKeepScroll(); return; }
+  if(S.panel){ S.panel = null; S.warn = null; rerenderKeepScroll(); }
+});
+document.documentElement.lang = "ru";
+render();
+</script>
+
+
+
+</body>
+</html>

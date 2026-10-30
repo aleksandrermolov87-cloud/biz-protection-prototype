@@ -1501,7 +1501,7 @@ function elPanel(){
     ? [[SVG_WALLET, `от ${RUB(minPrice(s.id))} в год`, 'Зависит от лимита ответственности'],
        [SVG_SHIELD, `Лимит ${RANGE(s.min, s.max)}`, 'Только вместе с имуществом или ДМС']]
     : [[SVG_WALLET, `от ${RUB(singleFrom(s.id))} в год`, `Минимальная стоимость страховки — ${RUB(SCHEMA.rules.minPremium)} в год`],
-       [SVG_HOUSE, `Помещение от ${MLN(s.objects[0].min)} до ${MLN(s.objects[0].max)}`, 'Только помещение в собственности компании. Оборудование и товар по выбору, до 5 млн ₽ каждое']];
+       [SVG_HOUSE, `Помещение ${RANGE(s.objects[0].min, s.objects[0].max)}`, 'Только помещение в собственности компании. Оборудование и товар по выбору, до 5 млн ₽ каждое']];
   return spShell(s.name,
     `<div class="plate plate--tight">${facts.map(([icon,t,d])=>`<div class="fact"><span class="fact__ico" aria-hidden="true">${icon}</span><span><span class="fact__t">${t}</span><span class="fact__s">${d}</span></span></div>`).join('')}</div>
       <div class="plate"><h4 class="t-h3">Что входит в страховку</h4><ul class="list">${s.base.map(b=>`<li>${mk()}<span>${b}</span></li>`).join('')}</ul></div>
@@ -1596,7 +1596,7 @@ function topupNote(c){
   if(!c.topup) return '';
   if(S.flow==='single') return `Включает доплату до минимальной стоимости страховки ${RUB(SCHEMA.rules.minPremium)} — ${RUB(c.topup)}. Защиту можно расширить без роста цены`;
   const fits = SCHEMA.sections.filter(s=>!S.sel[s.id].on && s.per!=='employee' && minPrice(s.id) <= c.topup && (s.id!=='liability' || liabilityAllowed()))
-    .map(s=>s.per==='limit' ? `${s.name.toLowerCase()} с лимитом ${MLN(s.min)}` : s.name.toLowerCase());
+    .map(s=>s.per==='limit' ? `гражданскую ответственность с лимитом ${MLN(s.min)}` : 'защиту имущества');
   return `Включает доплату до минимальной стоимости — ${RUB(c.topup)}. ${fits.length ? `Без роста цены можно добавить ${fits.join(' или ')}` : 'Защиту можно расширить без роста цены'}`;
 }
 function flowBar(target, block){
@@ -1736,7 +1736,7 @@ function elSfaRecommendation(){
       </div>
       <div class="sfa-reco__aside">
         <div class="sfa-reco__price"><span>Предварительная стоимость</span><b>от ${RUB(c.premium)} в год</b><small>С ДМС на 1 сотрудника ${RUB(c1.premium)}, каждый следующий +${RUB(perEmployee)} в год</small></div>
-        <p class="t-sm sec">Перед оформлением уточните адреса, стоимость имущества, лимит ответственности и число сотрудников</p>
+        <p class="t-sm sec">Перед оформлением уточните адрес, стоимость имущества, лимит ответственности и число сотрудников</p>
         <div class="sfa-reco__actions"><button type="button" class="btn btn--48 btn--primary" data-act="preset-go" data-v="reco">Перейти к оформлению</button></div>
       </div>
     </div>
@@ -1754,7 +1754,7 @@ function sfaProducts(){
       <div class="page__hd"><h2 class="t-h3">Отдельные страховки</h2><p class="t-md">Их можно оформить отдельно, без комплексного пакета</p></div>
       <div class="cells">
       ${single('dms','ДМС',[['Стоимость за сотрудника',`${RUB(minPrice('dms'))} в год`]])}
-      ${single('prop','Защита имущества',[['Стоимость',`от ${RUB(singleFrom('prop'))} в год`],['Помещение',`от ${MLN(sec('prop').objects[0].min)} до ${MLN(sec('prop').objects[0].max)}`],['Оборудование и товар',`до ${MLN(sec('prop').objects[1].max)}`]])}
+      ${single('prop','Защита имущества',[['Стоимость',`от ${RUB(singleFrom('prop'))} в год`],['Помещение', RANGE(sec('prop').objects[0].min, sec('prop').objects[0].max)],['Оборудование и товар',`до ${MLN(sec('prop').objects[1].max)}`]])}
       </div>
     </section>
   </div>`;

@@ -670,11 +670,11 @@ const SCHEMA = {
   rules:{minModules:1, maxModules:3, maxEmployees:10, minPremium:12000},
   sections:[
     {id:'prop', name:'Защита имущества', short:'Помещение, оборудование и товар при пожаре, заливе или краже', per:'object', kv:.5,
-     about:'Защита помещения, оборудования и товарных запасов. Помещение страхуется вместе с конструктивом, отделкой и инженерным оборудованием. Оборудование и товар — по выбору, у каждого объекта своя страховая сумма.',
+     about:'Защита помещения, оборудования и товарных запасов. Страхуем только помещение в собственности компании, вместе с конструктивом, отделкой и инженерным оборудованием. Оборудование и товар — по выбору, у каждого объекта своя страховая сумма.',
      base:['Пожар, взрыв, удар молнии','Залив, прорыв труб, авария отопления','Кража со взломом, грабёж, вандализм','Ураган, град, паводок','Бой витрин и стёкол','Падение деревьев, наезд транспорта, падение летательных аппаратов и беспилотников'],
      objects:[
        {id:'build', name:'Помещение', required:true, min:1000000, max:10000000,
-        what:'Конструктив, внутренняя отделка и инженерное оборудование', bands:[[1000000,.001]]},
+        what:'Только в собственности компании. Конструктив, внутренняя отделка и инженерное оборудование', bands:[[1000000,.001]]},
        {id:'equip', name:'Оборудование, мебель, техника', min:1000000, max:5000000, bands:[[1000000,.001]]},
        {id:'stock', name:'Товарные запасы', min:1000000, max:5000000, bands:[[1000000,.001]]}],
      options:[
@@ -743,7 +743,9 @@ const FIO_PARTICLE = /^(оглы|угли|кызы|кизи|улы|ogly|ugli|kyz
 const normFio = v => v.trim().replace(/\s+/g,' ').split(' ').filter(Boolean).map(w => FIO_PARTICLE.test(w) ? w.toLowerCase()
   : w.split(/([-'’])/).map(p => /^[-'’]$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('')).join(' ');
 const fmtPhone = v => { const x=v.replace(/\D/g,'').replace(/^[78]/,'').slice(-10); return `+7 ${x.slice(0,3)} ${x.slice(3,6)} ${x.slice(6,8)} ${x.slice(8,10)}`; };
-const staffErrors = d => Object.fromEntries(Object.entries(VALID).map(([k,f])=>[k, (k==='fio'||d[k].trim()) ? f(d[k]) : '']).filter(([,e])=>e));
+/* Все четыре поля обязательны: без телефона и email полис ДМС на сотрудника не выпускают */
+const STAFF_REQ = {dob:'Укажите дату рождения', phone:'Укажите телефон', email:'Укажите email'};
+const staffErrors = d => Object.fromEntries(Object.entries(VALID).map(([k,f])=>[k, (k==='fio'||d[k].trim()) ? f(d[k]) : STAFF_REQ[k]]).filter(([,e])=>e));
 const staffFull = p => !!(p.fio && p.dob && p.phone && p.email) && !Object.keys(staffErrors(p)).length;
 const staffMiss = p => [['dob','дату рождения'],['phone','телефон'],['email','почту']].filter(([k])=>!p[k]).map(([,t])=>t);
 const EMPN = () => S.staff.filter(p=>p.on && staffFull(p)).length;
@@ -1021,7 +1023,7 @@ function sectionLine(s, detailed=false){
   return `${main}${extra.length?` · ${extra.join(', ')}`:''}`;
 }
 const SFA_SALES_POINTS = [
-  'Имущество: помещение от 1 до 10 млн ₽ вместе с конструктивом, отделкой и инженерным оборудованием. Оборудование и товар по выбору, до 5 млн ₽ каждое',
+  'Имущество: помещение от 1 до 10 млн ₽, только в собственности клиента, вместе с конструктивом, отделкой и инженерным оборудованием. Оборудование и товар по выбору, до 5 млн ₽ каждое',
   'Гражданская ответственность оформляется только вместе с имуществом или ДМС, лимит от 3 до 10 млн ₽',
   `ДМС «Классика» до ${SCHEMA.rules.maxEmployees} сотрудников: ${RUB(sec('dms').programs[0].price)} за сотрудника, стоматология +${RUB(sec('dms').options[0].perEmp)}`,
   `Минимальная стоимость пакета ${RUB(SCHEMA.rules.minPremium)} в год. Если выбранная защита стоит меньше, разница распределяется по видам защиты`,
@@ -1214,7 +1216,7 @@ function elDocPanel(id){
 function elAfter(){
   const c = calc();
   return `<div class="policy"><div class="policy__hd"><div class="t-h3">Что будет после оформления</div></div>
-    <ul class="list">${[`Полис и документы придут на ${esc(S.payMail)}`, `Банк спишет ${RUB(c.premium)} со счёта ${ACC()} в день выпуска полиса`, 'Если случится страховой случай, порядок действий описан в памятке'].map(t=>`<li>${mk()}<span>${t}</span></li>`).join('')}</ul>
+    <ul class="list">${[`Полис и документы придут на ${esc(S.payMail)}`, `Банк спишет ${RUB(c.premium)} со счёта ${ACC()}, защита действует 1 год с даты оплаты`, 'Если случится страховой случай, порядок действий описан в памятке'].map(t=>`<li>${mk()}<span>${t}</span></li>`).join('')}</ul>
     ${elDocs()}</div>`;
 }
 function elPolicy(){
@@ -1236,9 +1238,9 @@ function elPolicy(){
 function elCheckoutBlocks(){
   const c = calc(), sfa = S.channel==='sfa', paper = sfa && S.signway==='paper';
   /* Виды защиты, суммы, лимиты и стоимость — один раз, в «Составе»; здесь только условия договора */
-  const rows = [['Срок действия','1 год с даты выпуска полиса'],
+  const rows = [['Срок действия','1 год с даты оплаты'],
     ...(S.sel.prop.on || S.sel.liability.on ? [['Адрес помещения', esc(S.addresses[0].addr)]] : []),
-    ['Списание', `Со счёта ${ACC()} в день выпуска полиса, разово за год`],
+    ['Списание', paper ? `Со счёта ${ACC()} после подписания документов, разово за год` : `Со счёта ${ACC()} в день подписания, разово за год`],
     ['Подписывает', paper ? 'Клиент, подпись на бумаге' : `${sfa ? 'Клиент' : SIGNER.name} · код придёт на ${SIGNER.phone}`]];
   return `<section class="block"><h2 class="t-h3">${S.flow==='package' ? 'Состав пакета' : 'Стоимость'}</h2>${elPkgSummary()}</section>
     <section class="block"><h2 class="t-h3">Условия договора</h2>
@@ -1339,7 +1341,7 @@ function elConsentDialog(){
   return `<div class="dlg__scrim" data-act="consent-close"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cns-t">
     <div class="dlg__hd"><h3 id="cns-t" tabindex="-1">Согласие на списание премии</h3>
       <button type="button" class="dlg__x" data-act="consent-close" aria-label="Закрыть">${SVG_X}</button></div>
-    <div class="dlg__body"><p class="t-md">${S.channel==='sfa' && S.signway==='paper' ? 'Покажите клиенту состав и стоимость страховки. Для завершения оформления потребуется его подпись на документах.' : `Банк спишет ${RUB(calc().premium)} со счёта ${ACC()} в день выпуска полиса. Списание разовое, за год вперёд.`}</p></div>
+    <div class="dlg__body"><p class="t-md">${S.channel==='sfa' && S.signway==='paper' ? 'Покажите клиенту состав и стоимость страховки. Для завершения оформления потребуется его подпись на документах.' : `Банк спишет ${RUB(calc().premium)} со счёта ${ACC()} в день подписания. Списание разовое, за год вперёд. Защита действует 1 год с даты оплаты.`}</p></div>
     <div class="dlg__ft"><button type="button" class="btn btn--48 ${PRI()}" data-act="consent-close">Понятно</button></div>
   </div></div>`;
 }
@@ -1499,7 +1501,7 @@ function elPanel(){
     ? [[SVG_WALLET, `от ${RUB(minPrice(s.id))} в год`, 'Зависит от лимита ответственности'],
        [SVG_SHIELD, `Лимит ${RANGE(s.min, s.max)}`, 'Только вместе с имуществом или ДМС']]
     : [[SVG_WALLET, `от ${RUB(singleFrom(s.id))} в год`, `Минимальная стоимость страховки — ${RUB(SCHEMA.rules.minPremium)} в год`],
-       [SVG_HOUSE, `Помещение от ${MLN(s.objects[0].min)} до ${MLN(s.objects[0].max)}`, 'С конструктивом, отделкой и инженерным оборудованием. Оборудование и товар по выбору, до 5 млн ₽ каждое']];
+       [SVG_HOUSE, `Помещение от ${MLN(s.objects[0].min)} до ${MLN(s.objects[0].max)}`, 'Только помещение в собственности компании. Оборудование и товар по выбору, до 5 млн ₽ каждое']];
   return spShell(s.name,
     `<div class="plate plate--tight">${facts.map(([icon,t,d])=>`<div class="fact"><span class="fact__ico" aria-hidden="true">${icon}</span><span><span class="fact__t">${t}</span><span class="fact__s">${d}</span></span></div>`).join('')}</div>
       <div class="plate"><h4 class="t-h3">Что входит в страховку</h4><ul class="list">${s.base.map(b=>`<li>${mk()}<span>${b}</span></li>`).join('')}</ul></div>
@@ -1626,7 +1628,7 @@ function nibConfig(){
       <ul class="package-benefits">
         <li class="card package-benefit">
           <div class="package-benefit__head"><h3 class="t-h4">Защита имущества</h3>${ART.prop}</div>
-          <p>Ремонт помещения, замена оборудования и товара после пожара, залива или кражи</p>
+          <p>Ремонт помещения в собственности компании, замена оборудования и товара после пожара, залива или кражи</p>
         </li>
         <li class="card package-benefit">
           <div class="package-benefit__head"><h3 class="t-h4">ДМС</h3>${ART.dms}</div>
@@ -1715,7 +1717,7 @@ function elSfaRecommendation(){
   S.staff = saved.staff; S.step = saved.step; S.estimateEmployees = saved.est;
   const perEmployee = presetEmployeeIncrement('reco');
   const reasons = [
-    ['Имущество магазина','Уточнить стоимость помещения, оборудования и товара'],
+    ['Имущество магазина','Уточнить, что помещение в собственности клиента, и стоимость помещения, оборудования и товара'],
     ['Сотрудники','Уточнить количество для расчёта ДМС и нужна ли стоматология'],
     ['Посетители и соседи','Выбрать отдельный лимит ответственности за ущерб третьим лицам']
   ];
@@ -2039,8 +2041,7 @@ app.addEventListener('click', e=>{
     const isNew = S.staffEdit==='new';
     if(isNew) S.staff.push({...d, on:true});
     else S.staff[S.staffEdit] = {...S.staff[S.staffEdit], ...d, on:true};
-    /* Тост по исходу: застрахован ли сотрудник на самом деле */
-    showToast(staffFull(d) ? (isNew ? 'Сотрудник добавлен в страховку' : 'Данные сотрудника сохранены') : `Сохранили. Чтобы застраховать, добавьте ${staffMiss(d).join(', ')}`);
+    showToast(isNew ? 'Сотрудник добавлен в страховку' : 'Данные сотрудника сохранены');
     if(act==='staff-save-more' && S.staff.length < SCHEMA.rules.maxEmployees){
       S.staffEdit='new'; S.staffDraft={fio:'',dob:'',phone:'',email:''}; rerenderKeepScroll(); app.querySelector('#st-fio')?.focus();
     } else { S.staffEdit=null; S.staffDraft=null; rerenderKeepScroll(); }

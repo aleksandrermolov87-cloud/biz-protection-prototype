@@ -121,12 +121,12 @@ ul,ol{padding:0;list-style:none}
 .chan button{position:relative}
 
 /* ── Tag (view=filled, rounded) ───────────────────────────────── */
-.tag{display:inline-flex;align-items:center;justify-content:center;min-height:32px;min-width:52px;padding:0 12px;border:1px solid transparent;border-radius:99px;background:var(--nt300);color:var(--text-primary);font-size:14px;line-height:20px;font-weight:400;white-space:nowrap;transition:background-color .2s ease,color .2s ease}
+.tag{display:inline-flex;align-items:center;justify-content:center;min-height:32px;min-width:52px;padding:0 8px;border:1px solid transparent;border-radius:99px;background:var(--nt300);color:var(--text-primary);font-size:14px;line-height:20px;font-weight:400;white-space:nowrap;transition:background-color .2s ease,color .2s ease}
 .tag:hover{background:var(--nt300-hover)}
 .tag:active{background:var(--nt300-press)}
 .tag[aria-pressed="true"]{background:var(--graphite);border-color:var(--graphite);color:var(--text-inverted)}
 .tag[aria-pressed="true"]:hover{background:var(--graphite-hover)}
-.tag--40{min-height:40px;min-width:64px}
+.tag--40{min-height:40px;min-width:64px;padding:0 12px}
 .tags{display:flex;gap:var(--gap-8);flex-wrap:wrap}
 
 /* ── Status (view=muted-alt, size 20, rectangular) ────────────── */
@@ -227,6 +227,7 @@ ul,ol{padding:0;list-style:none}
 .cell{display:flex;align-items:center;gap:16px;width:100%;padding:12px 0;border-top:1px solid var(--line)}
 .cell:first-child{border-top:0;padding-top:0}
 .cells--last .cell:last-child{padding-bottom:0}
+button.cell{text-align:left;font:inherit;color:inherit;cursor:pointer}
 .cell__main{flex:1;min-width:0}
 .cell__t{font-size:16px;line-height:20px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0}
 .cell__s{font-size:14px;line-height:20px;color:var(--text-secondary);margin-top:2px}
@@ -387,11 +388,23 @@ ul,ol{padding:0;list-style:none}
 .step.is-done .step__dash{background:var(--status-positive)}
 /* Итог под блоками: «Сумма» + Amount, затем Button 56 — как в макете */
 .flow{display:flex;flex-direction:column;gap:24px;padding-top:8px}
+/* Сумма и «Продолжить» всегда на экране, пока человек правит состав; поле в фокусе не уходит под панель */
+.flow--sticky{position:sticky;bottom:0;z-index:5;background:var(--bg-secondary);padding:16px 0}
+html{scroll-padding-bottom:calc(var(--flow-h, 0px) + 16px)}
 .flow__nums{display:flex;flex-wrap:wrap;gap:16px 32px}
 .flow__num{display:flex;flex-direction:column;gap:4px}
 .flow__num>span{font-size:16px;line-height:20px;color:var(--text-secondary)}
 .flow__num>b{font-size:22px;line-height:26px;font-weight:700}
 .flow__msg{font-size:16px;line-height:24px;color:var(--text-secondary)}
+.flow__note{font-size:14px;line-height:20px;color:var(--text-secondary);max-width:560px}
+.route{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.done__steps{padding:0}
+/* RadioGroup type="tag": подпись paragraph_primary_medium, отступ 12; Tag checked — graphite */
+.rgroup__label{font-size:16px;line-height:24px;color:var(--text-primary);margin-bottom:12px}
+.tag:has(input:checked){background:var(--graphite);border-color:var(--graphite);color:var(--text-inverted)}
+.tag:has(input:checked):hover{background:var(--graphite-hover)}
+.tag:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
+label.tag{cursor:pointer;position:relative}
 .actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 /* Сотрудники: ContentCardWrapper, padding 24, gap 16 */
 .staff{display:flex;flex-direction:column;gap:12px}
@@ -411,6 +424,8 @@ ul,ol{padding:0;list-style:none}
 /* ── Документы ────────────────────────────────────────────────── */
 .docs{display:flex;flex-direction:column}
 .docs li{display:flex;align-items:center;gap:16px;padding:12px 0;font-size:16px;line-height:20px}
+.docs__row{display:flex;align-items:center;gap:16px;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.docs__row:hover .docs__name{color:var(--text-primary-hover)}
 .docs li:first-child{padding-top:0}
 .docs li:last-child{padding-bottom:0}
 .docs__ico{width:24px;height:24px;flex:none;color:var(--nt700)}
@@ -613,6 +628,13 @@ ul,ol{padding:0;list-style:none}
   .toast{left:16px;right:16px;top:16px;max-width:none}
 }
 @media (max-width:599px){
+  .flow--sticky{gap:12px;padding:12px 0}
+  .flow.flow--sticky .actions{flex-direction:row}
+  .flow--sticky .flow__nums{flex-wrap:nowrap;gap:16px}
+  .flow--sticky .flow__num{min-width:0}
+  .flow--sticky .flow__num>b{font-size:18px;line-height:24px;white-space:nowrap}
+  .flow.flow--sticky .actions .btn{flex:1 1 0;min-width:0;padding-inline:12px}
+  .flow.flow--sticky .actions .btn--transparent{flex:0 0 auto}
   .top{justify-content:center;gap:8px}
   .top__spacer,.top__client{display:none}
   .top__back{margin-right:auto}
@@ -639,47 +661,54 @@ ul,ol{padding:0;list-style:none}
 <script>
 /* ═══════════ СХЕМА ПАКЕТА ═══════════════════════════════════════
    Тарифы, суммы и правила — из таблицы «Комплексная защита бизнеса —
-   параметры и калькулятор», лист «Параметры». Формулы повторяют лист
-   «Калькулятор»: премия клиента = ROUND(СС × тариф нетто / (1 − КВ)),
-   тариф берётся по диапазону страховой суммы (MATCH с типом 1). */
+   параметры и калькулятор (2)», лист «Параметры». Тарифы брутто:
+   премия = ROUND(СС × тариф × коэффициент) по каждому объекту, тариф
+   единый на любую сумму. Статуса «собственник / арендатор» в таблице больше
+   нет: помещение — с конструктивом. ДМС — одна программа «Классика». */
 const SCHEMA = {
   title:'Комплексная защита бизнеса',
-  rules:{minModules:1, maxModules:3, maxEmployees:100},
+  rules:{minModules:1, maxModules:3, maxEmployees:10, minPremium:12000},
   sections:[
-    {id:'prop', name:'Защита имущества', short:'Отделка, оборудование и товар при пожаре, заливе или краже', per:'object', kv:.5,
-     about:'Защита конструктива, внутренней отделки и инженерного оборудования помещения. Товарные запасы и оборудование страхуются по выбору, у каждого объекта своя страховая сумма.',
+    {id:'prop', name:'Защита имущества', short:'Помещение, оборудование и товар при пожаре, заливе или краже', per:'object', kv:.5,
+     about:'Защита помещения, оборудования и товарных запасов. Помещение страхуется вместе с конструктивом, отделкой и инженерным оборудованием. Оборудование и товар — по выбору, у каждого объекта своя страховая сумма.',
      base:['Пожар, взрыв, удар молнии','Залив, прорыв труб, авария отопления','Кража со взломом, грабёж, вандализм','Ураган, град, паводок','Бой витрин и стёкол','Падение деревьев, наезд транспорта, падение летательных аппаратов и беспилотников'],
      objects:[
-       {id:'build', name:'Конструктив, отделка и инженерное оборудование', required:true, min:1000000, max:10000000,
-        bands:[[1000000,.0035],[2000000,.0022],[3000000,.0014],[5000000,.0012],[8000000,.001]]},
-       {id:'stock', name:'Товарные запасы', min:1000000, max:5000000,
-        bands:[[1000000,.0007],[2000000,.00065],[3000000,.0006],[4000000,.00055]]},
-       {id:'equip', name:'Оборудование', min:1000000, max:5000000,
-        bands:[[1000000,.00075],[2000000,.0007],[3000000,.000625],[4000000,.0006]]}],
+       {id:'build', name:'Помещение', required:true, min:1000000, max:10000000,
+        what:'Конструктив, внутренняя отделка и инженерное оборудование', bands:[[1000000,.001]]},
+       {id:'equip', name:'Оборудование, мебель, техника', min:1000000, max:5000000, bands:[[1000000,.001]]},
+       {id:'stock', name:'Товарные запасы', min:1000000, max:5000000, bands:[[1000000,.001]]}],
      options:[
-       {id:'rent', name:'Аренда', desc:'Наполнение опции уточняется', fixed:5000}]},
-    {id:'dms', name:'ДМС', short:'Онлайн-консультации, приём в клиниках и обследования', per:'employee', fixed:true, kv:.5, price:16500,
-     about:'ДМС действует для каждого сотрудника, которого вы включили в страховку. Базовая программа: онлайн-консультации, приём в клиниках и обследования. Стоимость считается за сотрудника.',
-     base:['Онлайн-консультации врачей','Приём в клиниках программы','Обследования по назначению врача'],
+       /* Коэффициент к тарифу каждого объекта, премия округляется по объекту (B23 листа «Калькулятор») */
+       {id:'ext', name:'Расширенная выплата', k:1.3,
+        desc:'Выплатим ущерб полностью в пределах страховой суммы, без вычета износа. После выплаты сумма защиты восстанавливается',
+       /* Формулировки из таблицы — для сверки с полисом в окне «Что это значит» */
+       terms:[['По первому риску','Выплатим весь ущерб в пределах страховой суммы, даже если она меньше полной стоимости имущества'],
+              ['Без учёта износа','Из выплаты не вычитаем износ отделки, оборудования и товара'],
+              ['С восстановлением страховой суммы','После выплаты сумма защиты снова полная до конца срока']]}]},
+    {id:'dms', name:'ДМС', short:'Безлимитные очные приёмы врачей и исследования по назначению', per:'employee', fixed:true,
+     about:'ДМС действует для каждого сотрудника, которого вы включили в страховку. Программа «Классика» одна для всех, стоимость считается за сотрудника.',
+     base:['Безлимитные очные приёмы врачей','Исследования по назначению врача'],
+     /* В таблице одна программа — «Классика», базовая убрана; КВ 15% */
+     programs:[
+       {id:'classic', name:'Классика', desc:'Безлимитные очные приёмы врачей и исследования по назначению', price:35000, kv:.15}],
      options:[
-       {id:'visits', name:'Безлимитные очные приёмы', desc:'Приёмы врачей и исследования по назначению без ограничения числа', perEmp:35000},
        {id:'dental', name:'Стоматология', desc:'Без лимита', perEmp:12000}]},
     {id:'liability', name:'Гражданская ответственность', short:'Ущерб посетителям, соседям и арендодателю по вине бизнеса', per:'limit', kv:.5,
      needs:['prop','dms'],
      about:'Защита на случай, если деятельность бизнеса причинила вред жизни, здоровью или имуществу других людей. Оформляется только вместе с имуществом или ДМС.',
      base:['Вред жизни и здоровью посетителей','Ущерб имуществу посетителей','Ущерб соседям и арендодателю','Судебные расходы по претензиям в рамках условий страхования'],
      min:3000000, max:10000000,
-     bands:[[3000000,.000666667],[4000000,.0006],[5000000,.00055],[6000000,.0005],[7000000,.000475],[8000000,.00045],[9000000,.000425]],
+     bands:[[3000000,.001]],
      options:[
-       {id:'quality', name:'Ответственность за качество товаров, работ и услуг', desc:'Подлимит 25% от лимита ответственности, входит в лимит', sublimit:.25, rate:.0045}]}
+       {id:'quality', name:'Ответственность за качество товаров, работ и услуг', desc:'Претензии к качеству товара — до 25% лимита ответственности, отдельно не добавляется', sublimit:.25, rate:.001}]}
   ],
   presets:[
     {id:'base', name:'Базовый',
-     sel:{prop:{on:true,sums:{build:1000000,stock:0,equip:0},opts:[]}, dms:{on:false,opts:[]}, liability:{on:false,limit:3000000,opts:[]}}},
+     sel:{prop:{on:true,sums:{build:1000000,equip:0,stock:0},opts:[]}, dms:{on:false,program:'classic',opts:[]}, liability:{on:false,limit:3000000,opts:[]}}},
     {id:'reco', name:'Для магазина с сотрудниками',
-     sel:{prop:{on:true,sums:{build:3000000,stock:1000000,equip:0},opts:[]}, dms:{on:true,opts:[]}, liability:{on:true,limit:3000000,opts:[]}}},
+     sel:{prop:{on:true,sums:{build:3000000,equip:0,stock:1000000},opts:[]}, dms:{on:true,program:'classic',opts:[]}, liability:{on:true,limit:3000000,opts:[]}}},
     {id:'max',  name:'Максимальный',
-     sel:{prop:{on:true,sums:{build:10000000,stock:5000000,equip:5000000},opts:['rent']}, dms:{on:true,opts:['visits','dental']}, liability:{on:true,limit:10000000,opts:['quality']}}}
+     sel:{prop:{on:true,sums:{build:10000000,equip:5000000,stock:5000000},opts:['ext']}, dms:{on:true,program:'classic',opts:['dental']}, liability:{on:true,limit:10000000,opts:['quality']}}}
   ],
   docs:[['Условия страхования «Комплексная защита бизнеса»','PDF · 60 стр.'],['Образец полиса','PDF · 4 стр.'],['Памятка: как получить выплату','PDF · 2 стр.']]
 };
@@ -688,7 +717,9 @@ const SCHEMA = {
    регистрационные данные и обороты по счёту. Сотрудников и адреса банк
    не знает — это тяжело подтягивать автоматически, клиент вводит сам. */
 /* Счета клиента для списания премии — в макете селект показывает остаток */
-const ACCOUNTS = [['Расчётный счёт ··4471','2 480 190,00 ₽'],['Расчётный счёт ··1234','500 000,00 ₽']];
+const ACCOUNTS = [['Расчётный счёт ··4471','2 480 190,00 ₽',2480190],['Расчётный счёт ··1234','500 000,00 ₽',500000]];
+/* Кто подписывает: те же данные, что в шапке и в окне кода */
+const SIGNER = {name:'Набоков И. Д.', phone:'+7 ··· ··· 45 18'};
 const CLIENT = {
   name:'ООО «Продмаркет»', inn:'7725841200', okved:'47.11', okvedName:'Розничная торговля продуктами',
   turnover:'4,2 млн ₽ в месяц'
@@ -697,13 +728,20 @@ const CLIENT = {
 /* Проверка полей — по состоянию «Валидация полей» из макета. Пустое поле
    не ошибка (сотрудник просто не выбирается), неверное — ошибка. */
 const VALID = {
-  fio: v => /^[А-ЯЁA-Z][а-яёa-z-]+(\s+[А-ЯЁA-Z][а-яёa-z-]+){1,2}$/.test(v.trim()) ? '' : 'Укажите фамилию и имя. Отчество, если есть',
+  fio: v => { const t = v.trim(); if(/[^А-ЯЁа-яёA-Za-z\s'’-]/.test(t)) return 'Только буквы, дефис и апостроф';
+    const w = t.split(/\s+/).filter(Boolean); if(w.length < 2) return 'Укажите фамилию и имя. Отчество, если есть';
+    return w.length <= 5 && w.every(x=>FIO_WORD.test(x)) ? '' : 'Только буквы, дефис и апостроф'; },
   dob: v => { const m=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v.trim()); if(!m) return 'Дата в формате ДД.ММ.ГГГГ';
     const d=new Date(+m[3],m[2]-1,+m[1]); if(d.getDate()!==+m[1]||d.getMonth()!==m[2]-1) return 'Такой даты нет';
     const age=(Date.now()-d)/31557600000; return age<14||age>100 ? 'Сотруднику должно быть от 14 до 100 лет' : ''; },
-  phone: v => { const x=v.replace(/\D/g,''); return /^[78]?9\d{9}$/.test(x) ? '' : 'Мобильный номер: +7 и 10 цифр'; },
+  phone: v => { const x=v.replace(/\D/g,''); return /^[78]?9\d{9}$/.test(x) ? '' : 'Нужен российский мобильный: +7 и 10 цифр'; },
   email: v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? '' : 'Почта в формате ivanova@mail.ru',
 };
+/* ФИО: дефис и апостроф внутри слова, частицы «оглы», «угли», «кызы» строчными */
+const FIO_WORD = /^[А-ЯЁа-яёA-Za-z]+(?:[-'’][А-ЯЁа-яёA-Za-z]+)*$/;
+const FIO_PARTICLE = /^(оглы|угли|кызы|кизи|улы|ogly|ugli|kyzy)$/i;
+const normFio = v => v.trim().replace(/\s+/g,' ').split(' ').filter(Boolean).map(w => FIO_PARTICLE.test(w) ? w.toLowerCase()
+  : w.split(/([-'’])/).map(p => /^[-'’]$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('')).join(' ');
 const fmtPhone = v => { const x=v.replace(/\D/g,'').replace(/^[78]/,'').slice(-10); return `+7 ${x.slice(0,3)} ${x.slice(3,6)} ${x.slice(6,8)} ${x.slice(8,10)}`; };
 const staffErrors = d => Object.fromEntries(Object.entries(VALID).map(([k,f])=>[k, (k==='fio'||d[k].trim()) ? f(d[k]) : '']).filter(([,e])=>e));
 const staffFull = p => !!(p.fio && p.dob && p.phone && p.email) && !Object.keys(staffErrors(p)).length;
@@ -719,6 +757,8 @@ const fmt2 = n => new Intl.NumberFormat('ru-RU',{minimumFractionDigits:2,maximum
 const sec  = id => SCHEMA.sections.find(s=>s.id===id);
 const plural = (n,a,b,c)=>{const m=n%10,h=n%100; return n+' '+((h>=11&&h<=14)?c:(m===1?a:(m>=2&&m<=4?b:c)));};
 const MLN = n => `${String(n/1000000).replace('.',',')} млн ₽`;
+/* «от 1 до 10 млн ₽» — без повтора единиц */
+const RANGE = (a, b) => `от ${String(a/1000000).replace('.',',')} до ${MLN(b)}`;
 
 /* ═══════════ СОСТОЯНИЕ ══════════════════════════════════════════ */
 const START = {
@@ -730,7 +770,9 @@ const START = {
   addresses:[{addr:''}],
   payAccount:0, payMail:'office@prodmarket.ru', payMailError:null,
   agreed:false, signed:false, signway:'pep', consent:false, warn:null,
-  code:'', codeArr:[], codeLeft:0, codeTries:3, codeWrong:false, codeHelp:false
+  code:'', codeArr:[], codeLeft:0, codeTries:3, codeWrong:false, codeHelp:false, codeSentAt:0, codeSession:false,
+  showErrorsDetails:false, agreeErr:false, empOver:false, mismatch:false, mismatchOk:null, managerReq:false, explain:null,
+  staffDelete:null, staffPending:null
 };
 let S = structuredClone(START);
 
@@ -739,8 +781,9 @@ let S = structuredClone(START);
 const xround = n => Math.sign(n) * Math.round(Math.abs(+n.toPrecision(12)));
 /* INDEX(тарифы; MATCH(СС; «от»; 1)), при СС меньше первой границы — первый тариф (IFERROR) */
 const bandRate = (bands, v) => { let r = bands[0][1]; for(const [from, rate] of bands) if(v >= from) r = rate; return r; };
-const gross = (sum, rate, kv) => xround(sum * rate / (1 - kv));
 const sumsOf = sel => sel.sums || {};
+const optDesc = o => o.desc;
+const dmsProgram = (sel = S.sel.dms) => sec('dms').programs.find(p=>p.id===sel.program) || sec('dms').programs[0];
 /* ГО без имущества и ДМС не оформляется: в таблице её премия тогда 0 */
 const liabilityAllowed = (sel = S.sel) => sel.prop.on || sel.dms.on;
 function activeOpts(sid, sel = S.sel[sid]){ return sel.opts.filter(oid=>sec(sid).options.some(o=>o.id===oid)); }
@@ -748,52 +791,59 @@ function optState(){ return {ok:true}; }
 
 function calcSection(sid, sel = S.sel[sid], all = S.sel){
   const s = sec(sid), opts = activeOpts(sid, sel).map(oid=>s.options.find(o=>o.id===oid));
-  let premium = 0, insured = 0, units = 1;
+  let premium = 0, insured = 0, units = 1, kv = s.kv;
   const parts = [];
   if(s.per==='object'){
+    /* «Расширенная выплата» — коэффициент к тарифам каждого объекта, округление по объекту */
+    const k = opts.reduce((a,o)=>a*(o.k || 1), 1);
     for(const o of s.objects){
       const v = +sumsOf(sel)[o.id] || 0; if(!v) continue;
-      const p = gross(v, bandRate(o.bands, v), s.kv);
-      parts.push({id:o.id, name:o.name, sum:v, rate:bandRate(o.bands, v), premium:p});
+      const rate = bandRate(o.bands, v), p = xround(v * rate * k);
+      parts.push({id:o.id, name:o.name, sum:v, rate, premium:p});
       premium += p; insured += v;
     }
-    for(const o of opts){ parts.push({id:o.id, name:o.name, premium:o.fixed}); premium += o.fixed; }
   } else if(s.per==='limit'){
     const v = +sel.limit || 0;
     if(liabilityAllowed(all) && v){
-      const p = gross(v, bandRate(s.bands, v), s.kv);
+      const p = xround(v * bandRate(s.bands, v));
       parts.push({id:'limit', name:'Лимит ответственности', sum:v, rate:bandRate(s.bands, v), premium:p});
       premium += p; insured = v;
-      for(const o of opts){ const q = xround(v * o.sublimit * o.rate / (1 - s.kv)); parts.push({id:o.id, name:o.name, sum:v*o.sublimit, premium:q}); premium += q; }
+      for(const o of opts){ const q = xround(v * o.sublimit * o.rate); parts.push({id:o.id, name:o.name, sum:v*o.sublimit, premium:q}); premium += q; }
     }
   } else if(s.per==='employee'){
-    units = quoteEmployees();
-    premium = units * (s.price + opts.reduce((a,o)=>a+o.perEmp,0));
+    const prog = dmsProgram(sel);
+    units = quoteEmployees(); kv = prog.kv;
+    premium = units * (prog.price + opts.reduce((a,o)=>a+o.perEmp,0));
   }
-  return {premium, insured, units, opts, parts, kv:s.kv, bank:xround(premium*s.kv)};
+  return {premium, insured, units, opts, parts, kv, bank:xround(premium*kv)};
 }
+/* Если премия выбранных модулей меньше минимальной, клиент платит минимум.
+   Доплата распределяется по модулям пропорционально премии, КВ на неё — по их ставкам */
 function calc(sel = S.sel){
   const onIds = SCHEMA.sections.filter(s=>sel[s.id].on).map(s=>s.id);
   const rows = onIds.map(id=>({id, ...calcSection(id, sel[id], sel)}));
-  const premium = rows.reduce((a,r)=>a+r.premium,0);
-  const bank = rows.reduce((a,r)=>a+r.bank,0);
+  const base = rows.reduce((a,r)=>a+r.premium,0);
+  const baseBank = rows.reduce((a,r)=>a+r.bank,0);
+  const topup = base ? Math.max(0, SCHEMA.rules.minPremium - base) : 0;
+  const bank = baseBank + (topup ? xround(topup * baseBank / base) : 0);
   const insured = rows.reduce((a,r)=>a+r.insured,0);
-  return {rows, onIds, gross:premium, premium, insured, bank};
+  return {rows, onIds, base, topup, premium:base + topup, insured, bank};
 }
 /* Цена доп. услуги сама по себе: сколько она добавляет к модулю в год */
 function optPrice(sid, oid){
   const cur = S.sel[sid], rest = activeOpts(sid).filter(x=>x!==oid);
   return calcSection(sid, {...cur, opts:[...rest, oid]}).premium - calcSection(sid, {...cur, opts:rest}).premium;
 }
-/* «Ответственность за качество» в таблице — «от» по минимальному лимиту */
+/* Цена «от» доп. услуги — по минимальной сумме, как в листе «Калькулятор» */
 function optFrom(sid, o){
   const s = sec(sid);
   if(o.perEmp) return o.perEmp;
-  if(o.fixed) return o.fixed;
-  return xround(s.min * o.sublimit * o.rate / (1 - s.kv));
+  if(o.k){ const r = s.objects.find(x=>x.required); return xround(r.min * r.bands[0][1] * o.k) - xround(r.min * r.bands[0][1]); }
+  return xround(s.min * o.sublimit * o.rate);
 }
 function optCost(sid, o){
   if(sec(sid).per==='employee' && !quoteEmployees()) return [RUB(o.perEmp), 'на сотрудника в год'];
+  if(sec(sid).per==='employee') return [RUB(optPrice(sid, o.id)), `в год · ${RUB(o.perEmp)} за каждого`];
   const p = optPrice(sid, o.id);
   return p ? [RUB(p), 'в год'] : [`от ${RUB(optFrom(sid,o))}`, 'в год'];
 }
@@ -815,11 +865,11 @@ function sumError(sid, oid){
   if(sid==='liability'){
     const v = +S.sel.liability.limit || 0;
     if(!v) return 'Укажите лимит';
-    return v < s.min || v > s.max ? `Лимит от ${MLN(s.min)} до ${MLN(s.max)}` : '';
+    return v < s.min || v > s.max ? `Лимит ${RANGE(s.min, s.max)}` : '';
   }
   const o = s.objects.find(x=>x.id===oid), v = +S.sel.prop.sums[oid] || 0;
   if(!v) return o.required ? 'Укажите страховую сумму' : '';
-  return v < o.min || v > o.max ? `Сумма от ${MLN(o.min)} до ${MLN(o.max)}` : '';
+  return v < o.min || v > o.max ? `Сумма ${RANGE(o.min, o.max)}` : '';
 }
 
 /* ═══════════ ИКОНКИ ═════════════════════════════════════════════ */
@@ -934,37 +984,53 @@ function maskValue(kind, raw, caret, prev=''){
 /* Цена «от» — как в листе «Параметры»: минимальная сумма × первый тариф */
 function minPrice(sid){
   const s = sec(sid);
-  if(s.per==='employee') return s.price;
-  if(s.per==='limit') return gross(s.min, s.bands[0][1], s.kv);
-  const o = s.objects.find(x=>x.required); return gross(o.min, o.bands[0][1], s.kv);
+  if(s.per==='employee') return s.programs[0].price;
+  if(s.per==='limit') return xround(s.min * s.bands[0][1]);
+  const o = s.objects.find(x=>x.required); return xround(o.min * o.bands[0][1]);
 }
+/* Отдельная страховка тоже не дешевле минимальной стоимости (решение владельца: так считает calc) */
+const singleFrom = sid => Math.max(minPrice(sid), SCHEMA.rules.minPremium);
+/* Цена ДМС за одного сотрудника: программа + выбранные услуги */
+const empRate = (sel = S.sel.dms) => dmsProgram(sel).price + activeOpts('dms', sel).reduce((a,oid)=>a+(sec('dms').options.find(o=>o.id===oid)?.perEmp||0),0);
+/* Расчёт с n сотрудниками по оценке — для цены «от», пока число не указано */
+function calcAt(n){
+  const e = S.estimateEmployees, st = S.step;
+  S.estimateEmployees = n; if(!['config','details'].includes(st)) S.step = 'config';
+  const c = calc(); S.estimateEmployees = e; S.step = st; return c;
+}
+/* ДМС включён, а число сотрудников не указано: итог не выдаём за окончательный */
+const dmsPending = () => S.sel.dms.on && !quoteEmployees();
+const EMPG = n => plural(n,'сотрудника','сотрудников','сотрудников');
+const ACC = () => ACCOUNTS[S.payAccount][0].replace('Расчётный счёт ','');
 /* У фиксированной программы одна цена, не диапазон — без слова «от» */
 const priceWord = s => s.fixed ? '' : 'от ';
-/* Минимальный пакет по правилам продукта — самый дешёвый из модулей, которые можно оформить отдельно */
-const packageMin = () => Math.min(minPrice('prop'), minPrice('dms'));
+/* Минимальная премия пакета из правил продукта: любой набор модулей, но не дешевле */
+const packageMin = () => SCHEMA.rules.minPremium;
 function presetCalc(id){
   const saved = S.sel; S.sel = structuredClone(SCHEMA.presets.find(p=>p.id===id).sel); const c = calc(); S.sel = saved; return c;
 }
-function sectionLine(s){
+function sectionLine(s, detailed=false){
   const r = calcSection(s.id), sel = S.sel[s.id];
   let main;
-  if(s.per==='employee') main = quoteEmployees() ? `${!EMPN()?'Предварительно ':''}${EMP(quoteEmployees())}` : 'Укажите число сотрудников';
+  if(s.per==='employee') main = (detailed ? `Программа «${dmsProgram(sel).name}» · ` : '') + (quoteEmployees() ? `${!EMPN()?'Предварительно ':''}${EMP(quoteEmployees())}` : 'Укажите число сотрудников');
   else if(s.per==='limit') main = !liabilityAllowed() ? 'Только вместе с имуществом или ДМС' : sel.limit ? `Лимит ${RUB(sel.limit)}` : 'Укажите лимит';
-  else main = r.insured ? `Страховая сумма ${RUB(r.insured)}` : 'Укажите страховую сумму';
+  else main = !r.insured ? 'Укажите страховую сумму'
+    : detailed ? r.parts.map((p,i)=>`${i ? p.name.toLowerCase() : p.name}${p.id==='build' ? ' с конструктивом' : ''} ${RUB(p.sum)}`).join('; ')
+    : `Страховая сумма ${RUB(r.insured)}`;
   const extra = r.opts.map(o=>`${o.name.toLowerCase()} ${optShort(s.id,o)}`);
   return `${main}${extra.length?` · ${extra.join(', ')}`:''}`;
 }
 const SFA_SALES_POINTS = [
-  'Имущество: отделка и инженерное оборудование от 1 до 10 млн ₽, товар и оборудование по выбору до 5 млн ₽',
+  'Имущество: помещение от 1 до 10 млн ₽ вместе с конструктивом, отделкой и инженерным оборудованием. Оборудование и товар по выбору, до 5 млн ₽ каждое',
   'Гражданская ответственность оформляется только вместе с имуществом или ДМС, лимит от 3 до 10 млн ₽',
-  `ДМС: онлайн-консультации, приём в клиниках и обследования, ${RUB(16500)} за сотрудника`,
-  'Аренду, безлимитные приёмы, стоматологию и ответственность за качество можно подключить за дополнительную плату',
+  `ДМС «Классика» до ${SCHEMA.rules.maxEmployees} сотрудников: ${RUB(sec('dms').programs[0].price)} за сотрудника, стоматология +${RUB(sec('dms').options[0].perEmp)}`,
+  `Минимальная стоимость пакета ${RUB(SCHEMA.rules.minPremium)} в год. Если выбранная защита стоит меньше, разница распределяется по видам защиты`,
   'Состав можно изменить до оформления'
 ];
 function presetEmployeeRate(id){
   const d = SCHEMA.presets.find(p=>p.id===id).sel.dms;
   if(!d.on) return 0;
-  return sec('dms').price + d.opts.reduce((total, oid)=>total + (sec('dms').options.find(o=>o.id===oid)?.perEmp || 0), 0);
+  return dmsProgram(d).price + d.opts.reduce((total, oid)=>total + (sec('dms').options.find(o=>o.id===oid)?.perEmp || 0), 0);
 }
 function presetEmployeeIncrement(id){
   return presetEmployeeRate(id);
@@ -975,7 +1041,7 @@ function elPackagePlacements(){
       <div class="pcard__body">
         <div class="pcard__hd"><h2 class="t-h3" id="package-entry-title">Комплексная защита</h2>
           <p class="t-md">Имущество, ДМС и ответственность перед третьими лицами</p></div>
-        <div class="pcard__facts"><div><span>Состав</span><b>От ${SCHEMA.rules.minModules} до ${SCHEMA.rules.maxModules} модулей</b></div><div><span>Стоимость</span><b>от ${RUB(packageMin())} в год</b></div></div>
+        <div class="pcard__facts"><div><span>Состав</span><b>От ${SCHEMA.rules.minModules} до ${SCHEMA.rules.maxModules} видов защиты</b></div><div><span>Стоимость</span><b>от ${RUB(packageMin())} в год</b></div></div>
         <div class="pcard__cta"><span class="btn btn--secondary package-entry__action" aria-hidden="true">Рассчитать</span></div>
       </div>
       <div class="pcard__art">${ART.pkg}</div>
@@ -1007,9 +1073,13 @@ function elSections(){
 function elWarn(){ return S.warn && !S.panel ? `<div class="note" role="status"><span>${S.warn}</span></div>` : ''; }
 /* Адрес страхуемого помещения: в таблице расчёт ведётся на один объект */
 function elParams(){
-  const a = S.addresses[0];
-  return `<div class="fields"><div class="field"><label for="addr-0">Адрес помещения</label><input id="addr-0" data-act="addr" data-v="0" value="${esc(a.addr)}" placeholder="Город, улица, дом"></div></div>`;
+  const a = S.addresses[0], err = S.showErrorsDetails && !a.addr.trim();
+  return `<div class="fields"><div><div class="field${err?' field--err':''}"><label for="addr-0">Адрес помещения</label><input id="addr-0" data-act="addr" data-v="0" value="${esc(a.addr)}" placeholder="Город, улица, дом" ${err?'aria-invalid="true" aria-describedby="addr-0-err"':''}></div>
+    ${err?'<p class="field__err" id="addr-0-err">Укажите адрес помещения</p>':''}</div></div>`;
 }
+/* Маршрут, когда условия пакета не подходят: Note и Button 48 secondary */
+const elLimitRoute = text => `<div class="route"><div class="note" role="status"><span>${text}</span></div>
+  <button type="button" class="btn btn--48 btn--secondary" data-act="manager-request">Оставить заявку менеджеру</button></div>`;
 /* Блок «Сотрудники» — по макету «Оформление страховки»: карточка на каждого
    (ContentCardWrapper), действия в меню «⋯», добавление в модалке. Сотрудник
    входит в страховку, когда его данные полные. */
@@ -1026,12 +1096,12 @@ function elStaffRow(p, i){
       <button type="button" role="menuitem" data-act="staff-del" data-v="${i}">${SVG_TRASH}Удалить</button></div>` : ''}
   </li>`;
 }
-function elStaffField(k, label, ph, attrs, addon=''){
+function elStaffField(k, label, ph, attrs, addon='', sub=''){
   const d = S.staffDraft, err = (S.staffErr||{})[k];
   return `<div><div class="field${err?' field--err':''}"><label for="st-${k}">${label}</label>
       <input id="st-${k}" data-act="staff-f" data-v="${k}" value="${esc(d[k])}" placeholder="${ph}" ${attrs}
-        ${err?`aria-invalid="true" aria-describedby="st-${k}-err"`:''}>${addon?`<span class="field__addons" aria-hidden="true">${addon}</span>`:''}</div>
-    ${err?`<p class="field__err" id="st-${k}-err">${err}</p>`:''}</div>`;
+        ${err?`aria-invalid="true" aria-describedby="st-${k}-err"`:sub?`aria-describedby="st-${k}-sub"`:''}>${addon?`<span class="field__addons" aria-hidden="true">${addon}</span>`:''}</div>
+    ${err?`<p class="field__err" id="st-${k}-err">${err}</p>`:sub?`<p class="field__sub" id="st-${k}-sub">${sub}</p>`:''}</div>`;
 }
 /* Modal 500 «Добавление сотрудника»: поля и две кнопки, как в макете */
 function elStaffForm(){
@@ -1050,19 +1120,21 @@ function elStaffForm(){
     </div></div>
     <div class="dlg__ft">
       <button type="button" class="btn btn--48 ${PRI()}" data-act="staff-save">${isNew?'Добавить':'Сохранить'}</button>
-      <button type="button" class="btn btn--48 btn--secondary" data-act="staff-cancel">Отменить</button>
+      ${isNew && S.staff.length < SCHEMA.rules.maxEmployees - 1 ? '<button type="button" class="btn btn--48 btn--secondary" data-act="staff-save-more">Добавить ещё</button>' : ''}
+      <button type="button" class="btn btn--48 btn--secondary" data-act="staff-discard">Отменить</button>
     </div>
   </div></div>`;
 }
 function elStaff(){
-  const n = EMPN();
+  const n = EMPN(), m = S.staff.length, max = SCHEMA.rules.maxEmployees;
   return `<div class="block__hd"><h2 class="t-h3">Сотрудники</h2>
-      <p>Добавьте всех, кого хотите застраховать. Стоимость ДМС считается за каждого</p></div>
+      <p>ДМС считается за каждого добавленного сотрудника. Данные нужны страховщику для полиса</p></div>
     ${elEstimateReminder()}
-    ${S.staff.length ? `<ul class="staff">${S.staff.map(elStaffRow).join('')}</ul>`
+    ${m ? `<ul class="staff">${S.staff.map(elStaffRow).join('')}</ul>`
       : `<p class="staff__empty">Вы ещё не добавили ни одного сотрудника</p>`}
-    <button type="button" class="btn btn--secondary btn--addon addr-add" data-act="staff-add">${btnIcon(SVG_PLUS)}Добавить</button>
-    ${n ? `<p class="t-sm sec">В страховку войдут ${EMP(n)} · ${RUB(calcSection('dms').premium)} в год</p>` : ''}`;
+    ${m >= max ? elLimitRoute(`В пакете до ${max} сотрудников. Для компании больше ${max} человек оформим защиту через менеджера`)
+      : `<button type="button" class="btn btn--secondary btn--addon addr-add" data-act="staff-add">${btnIcon(SVG_PLUS)}Добавить</button>`}
+    ${n && n < m ? `<p class="t-sm sec">В страховку войдут ${n} из ${m} добавленных</p>` : ''}`;
 }
 /* ToastPlate: короткое подтверждение действия, закрывается само */
 function elToast(){
@@ -1072,46 +1144,78 @@ function elToast(){
 }
 let toastTimer = null;
 function showToast(text){ S.toast = text; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ S.toast=null; rerenderKeepScroll(); }, 3000); }
+/* Расхождение между числом сотрудников на первом шаге и списком: цена не меняется молча */
 function elEstimateReminder(){
-  if(!S.sel.dms.on || !S.estimateEmployees || EMPN()) return '';
-  return `<div class="note" role="status"><span>В расчёте учтено ${EMP(S.estimateEmployees)}. Добавьте их данные, чтобы уточнить стоимость</span></div>`;
+  const N = S.estimateEmployees, k = EMPN();
+  if(!S.sel.dms.on || !N || k===N) return '';
+  const r = empRate();
+  const text = !k ? `В расчёте учтено ${EMP(N)}. Добавьте их данные, чтобы уточнить стоимость`
+    : k < N ? `Добавлено ${k} из ${N}. ДМС считается по списку: ${RUB(k*r)} в год вместо ${RUB(N*r)}`
+    : `В списке ${EMP(k)}, на первом шаге было указано ${N}. ДМС считается по списку`;
+  return `<div class="note" role="status"><span>${text}</span></div>`;
 }
 /* Счёт списания — на шаге настройки, как в макете (AccountSelect, FormControl 56) */
+function accountError(){
+  const p = calc().premium, a = ACCOUNTS[S.payAccount];
+  return p > a[2] ? `Недостаточно средств: нужно ${RUB(p)}, на счёте ${a[1]}` : '';
+}
 function elAccount(){
+  const err = accountError();
   return `<section class="block"><h2 class="t-h3">Счёт списания</h2>
-    <div class="field field--select"><label for="pay-acc">${ACCOUNTS[S.payAccount][0]}</label>
-      <select id="pay-acc" data-act="pay-acc">${ACCOUNTS.map((a,i)=>`<option value="${i}" ${S.payAccount===i?'selected':''}>${a[1]}${S.payAccount===i?'':` · ${a[0]}`}</option>`).join('')}</select></div>
+    <div><div class="field field--select${err?' field--err':''}"><label for="pay-acc">${ACCOUNTS[S.payAccount][0]}</label>
+      <select id="pay-acc" data-act="pay-acc" ${err?'aria-invalid="true" aria-describedby="pay-acc-err"':''}>${ACCOUNTS.map((a,i)=>`<option value="${i}" ${S.payAccount===i?'selected':''}>${a[1]}${S.payAccount===i?'':` · ${a[0]}`}</option>`).join('')}</select></div>
+      ${err?`<p class="field__err" id="pay-acc-err">${err}</p>`:''}</div>
   </section>`;
 }
 /* Steps, vertical: 24 маркер, линия 2px между шагами */
-function elSteps(cur){
-  const steps = ['Настройка страховки','Адреса и сотрудники','Проверка и подписание документов'];
-  return `<div class="isle"><ol class="steps">${steps.map((t,i)=>`<li class="step${i<cur?' is-done':i===cur?' is-now':''}"${i===cur?' aria-current="step"':''}>
+const elStepList = (steps, cur) => `<ol class="steps">${steps.map((t,i)=>`<li class="step${i<cur?' is-done':i===cur?' is-now':''}"${i===cur?' aria-current="step"':''}>
     <span class="step__ind" aria-hidden="true"><i class="step__mark">${i<cur?SVG_CHECK:i+1}</i><i class="step__dash"></i></span>
-    <span class="step__text">${t}</span></li>`).join('')}</ol></div>`;
+    <span class="step__text">${t}</span></li>`).join('')}</ol>`;
+function elSteps(cur){
+  const addr = S.sel.prop.on || S.sel.liability.on, dms = S.sel.dms.on;
+  return `<div class="isle">${elStepList(['Настройка страховки', addr && dms ? 'Адрес и сотрудники' : dms ? 'Сотрудники' : 'Адрес', 'Проверка и подписание документов'], cur)}</div>`;
 }
-/* brief=true — только итоги, без построчного повтора программ: на шаге «Счёт и
-   документы» их построчная разбивка уже есть слева, в «Составе пакета». */
-function elSummary(brief){
-  const c = calc();
-  return `<div class="isle"><div class="sum">
-    ${brief ? '' : c.rows.map(r=>{const s=sec(r.id);
-      return `<div class="srow"><span>${s.name}</span><b>${perHeadPending(s) ? `${RUB(minPrice(s.id))} за чел.` : RUB(r.premium)}</b></div>`;}).join('')}
-    <div class="srow srow--total"><span>${S.step==='checkout'?'Стоимость за год':'Предварительная стоимость за год'}</span><b>${RUB(c.premium)}</b></div>
-    <div class="srow"><span>Лимиты</span><b>По каждой программе отдельно</b></div>
-  </div></div>`;
+/* Вознаграждение банка видит только менеджер: свёрнуто, не в таблице, которую он показывает клиенту */
+function elBankFee(){
+  const c = calc(); if(!c.premium) return '';
+  return `<div class="isle"><details class="module-coverage"><summary>Вознаграждение банка · видите только вы</summary>
+    <p class="t-sm sec">${RUB(c.bank)} · ${Math.round(c.bank/c.premium*100)}% от стоимости</p></details></div>`;
 }
 function elPkgSummary(){
   const c = calc();
   return `<div class="cells cells--last">${c.rows.map(r=>{const s=sec(r.id);
-      return `<div class="cell"><div class="cell__main"><div class="cell__t">${s.name}</div><div class="cell__s">${sectionLine(s)}</div></div><div class="cell__r"><b>${RUB(r.premium)}</b></div></div>`;}).join('')}
-    <div class="cell"><div class="cell__main"><div class="cell__t">Итого в год</div><div class="cell__s">Страховые суммы и лимиты указаны выше${S.sel.dms.on?` · ${EMP(EMPN())}`:''}</div></div><div class="cell__r"><b class="strong">${RUB(c.premium)}</b></div></div>
+      return `<div class="cell"><div class="cell__main"><div class="cell__t">${s.name}</div><div class="cell__s">${sectionLine(s, true)}</div></div><div class="cell__r"><b>${RUB(r.premium)}</b></div></div>`;}).join('')}
+    ${c.topup ? `<div class="cell"><div class="cell__main"><div class="cell__t">Доплата до минимальной стоимости</div><div class="cell__s">${S.flow==='single' ? `Минимальная стоимость страховки — ${RUB(SCHEMA.rules.minPremium)} в год` : `Минимальная стоимость пакета — ${RUB(SCHEMA.rules.minPremium)} в год`}</div></div><div class="cell__r"><b>${RUB(c.topup)}</b></div></div>` : ''}
+    <div class="cell"><div class="cell__main"><div class="cell__t">Итого в год</div></div><div class="cell__r"><b class="strong">${RUB(c.premium)}</b></div></div>
   </div>`;
 }
+const DOCS = () => [['terms', ...SCHEMA.docs[0]], ['contract','Проект договора','PDF · 12 стр.'], ['policy','Образец полиса','PDF · 4 стр.'],
+  ...(S.sel.dms.on ? [['staff','Список застрахованных',`PDF · ${EMP(EMPN())}`]] : []),
+  ['invoice','Образец счёта на оплату','PDF · 1 стр.'], ['memo', ...SCHEMA.docs[2]]];
 function elDocs(){
-  const docs = [['Образец полиса','PDF · 4 стр.'],['Проект договора','PDF · 12 стр.'],['Образец счёта на оплату','PDF · 1 стр.']];
-  if(S.sel.dms.on) docs.splice(2,0,['Список застрахованных',`PDF · ${EMP(EMPN())}`]);
-  return `<ul class="docs">${docs.map(([d,m])=>`<li><span class="docs__ico" aria-hidden="true">${SVG_DOC}</span><span class="docs__name">${d}</span><span class="docs__meta">${m}</span><span class="docs__dl" aria-hidden="true">${SVG_DL}</span></li>`).join('')}</ul>`;
+  return `<ul class="docs">${DOCS().map(([id,d,m])=>`<li><button type="button" class="docs__row" data-act="doc" data-v="${id}"><span class="docs__ico" aria-hidden="true">${SVG_DOC}</span><span class="docs__name">${d}</span><span class="docs__meta">${m}</span><span class="docs__dl" aria-hidden="true">${SVG_DL}</span></button></li>`).join('')}</ul>`;
+}
+/* Документ — в той же боковой панели 600, что «Условия страхования». Тексты демо, их даст страховщик */
+function elDocPanel(id){
+  const [, name, meta] = DOCS().find(d=>d[0]===id) || ['', 'Документ', ''], c = calc();
+  const demo = `<div class="plate"><p class="t-md">Демонстрационный документ, ${meta}. Окончательный текст предоставит страховая компания</p></div>`;
+  const tv = rows => `<div class="plate"><div class="tv">${rows.map(([k,v])=>`<div class="tv__row"><span class="tv__k">${k}</span><span class="tv__v">${v}</span></div>`).join('')}</div></div>`;
+  const staff = S.staff.filter(staffFull);
+  const body = id==='terms' ? demo + c.rows.map(r=>{const s=sec(r.id);
+      return `<div class="plate"><h4 class="t-h3">${s.name}</h4><ul class="list">${s.base.map(b=>`<li>${mk()}<span>${b}</span></li>`).join('')}</ul></div>`;}).join('')
+    : id==='contract' ? demo + `<div class="plate">${elPkgSummary()}</div>`
+    : id==='policy' ? elPolicy()
+    : id==='staff' ? (staff.length ? tv(staff.map(p=>[esc(p.fio), p.dob])) : `<div class="plate"><p class="staff__empty">Сотрудники ещё не добавлены</p></div>`)
+    : id==='invoice' ? tv([['Получатель','Страховая компания-партнёр банка'],['Плательщик',CLIENT.name],['Сумма',AMOUNT(c.premium)],['Счёт списания',ACC()],['Назначение',`Страховая премия по договору «${prodTitle()}»`]])
+    : demo + `<div class="plate"><ul class="list">${['Сообщите о случае страховщику как можно раньше','Сохраните документы и фото повреждений','Выплата — по условиям страхования и документам, которые запросит страховщик'].map(t=>`<li>${mk()}<span>${t}</span></li>`).join('')}</ul></div>`;
+  return spShell(name, body, `<button type="button" class="btn btn--48 btn--secondary" data-act="panel-close">Закрыть</button>`);
+}
+/* Что будет после оформления — на экране результата */
+function elAfter(){
+  const c = calc();
+  return `<div class="policy"><div class="policy__hd"><div class="t-h3">Что будет после оформления</div></div>
+    <ul class="list">${[`Полис и документы придут на ${esc(S.payMail)}`, `Банк спишет ${RUB(c.premium)} со счёта ${ACC()} в день выпуска полиса`, 'Если случится страховой случай, порядок действий описан в памятке'].map(t=>`<li>${mk()}<span>${t}</span></li>`).join('')}</ul>
+    ${elDocs()}</div>`;
 }
 function elPolicy(){
   const c = calc();
@@ -1122,7 +1226,8 @@ function elPolicy(){
       const add = r.opts.map(o=>`${o.name}: ${RUB(optPrice(s.id,o.id))} в год`).join('; ');
       const sum = s.per==='employee' ? EMP(EMPN()) : RUB(r.insured);
       return `<div class="psec"><b>${s.name}<em>${sum}</em></b><span>${what}</span>${add?`<span>Доп. услуги: ${add}</span>`:''}</div>`;}).join('')}</div>
-    <div class="sum"><div class="srow"><span>Лимиты</span><b>По каждой программе отдельно</b></div>
+    <div class="sum">
+    ${c.topup ? `<div class="srow"><span>Доплата до минимальной стоимости</span><b>${fmt2(c.topup)} ₽</b></div>` : ''}
     <div class="srow"><span>Расчёт стоимости за год</span><b>${fmt2(c.premium)} ₽</b></div></div>
   </div>`;
 }
@@ -1130,33 +1235,29 @@ function elPolicy(){
    (TableView), документы со скачиванием, кнопки под блоками. */
 function elCheckoutBlocks(){
   const c = calc(), sfa = S.channel==='sfa', paper = sfa && S.signway==='paper';
-  const rows = [['Срок действия','1 год'],
-    ...(S.flow==='package' ? [['Модули', c.rows.map(r=>sec(r.id).name).join(', ')]] : []),
-    ...(S.sel.dms.on ? [['Количество застрахованных', String(EMPN())]] : []),
-    ...(S.sel.prop.on ? [['Страховая сумма имущества', RUB(calcSection('prop').insured)]] : []),
-    ...(S.sel.liability.on ? [['Лимит ответственности', RUB(S.sel.liability.limit)]] : []),
+  /* Виды защиты, суммы, лимиты и стоимость — один раз, в «Составе»; здесь только условия договора */
+  const rows = [['Срок действия','1 год с даты выпуска полиса'],
     ...(S.sel.prop.on || S.sel.liability.on ? [['Адрес помещения', esc(S.addresses[0].addr)]] : []),
-    ['Стоимость', AMOUNT(c.premium)],
-    /* КВ банка видит только менеджер — в рабочем месте */
-    ...(S.channel==='sfa' ? [['КВ банка', `${RUB(c.bank)} · ${String(Math.round(c.bank/c.premium*100)).replace('.',',')}%`]] : []),
-    ['Счёт списания', ACCOUNTS[S.payAccount][0].replace('Расчётный счёт ','')]];
-  return `<section class="block"><h2 class="t-h3">Параметры страхования</h2>
+    ['Списание', `Со счёта ${ACC()} в день выпуска полиса, разово за год`],
+    ['Подписывает', paper ? 'Клиент, подпись на бумаге' : `${sfa ? 'Клиент' : SIGNER.name} · код придёт на ${SIGNER.phone}`]];
+  return `<section class="block"><h2 class="t-h3">${S.flow==='package' ? 'Состав пакета' : 'Стоимость'}</h2>${elPkgSummary()}</section>
+    <section class="block"><h2 class="t-h3">Условия договора</h2>
       <div class="tv">${rows.map(([k,v])=>`<div class="tv__row"><span class="tv__k">${k}</span><span class="tv__v">${v}</span></div>`).join('')}</div>
     </section>
-    ${S.flow==='package' ? `<section class="block"><h2 class="t-h3">Состав пакета</h2>${elPkgSummary()}</section>` : ''}
     <section class="block">
       <div class="block__hd"><h2 class="t-h3">Документы</h2><p>Проверьте перед подписанием</p></div>
       ${elDocs()}
       <div><div class="field${S.payMailError?' field--err':''}"><label for="pay-mail">Email для документов</label><input id="pay-mail" data-act="pay-mail" type="email" value="${esc(S.payMail)}" placeholder="office@company.ru" ${S.payMailError?'aria-invalid="true" aria-describedby="pay-mail-err"':'aria-describedby="pay-mail-hint"'}></div>
       ${S.payMailError?`<p class="field__err" id="pay-mail-err">${S.payMailError}</p>`:`<p class="field__sub" id="pay-mail-hint">Вышлем полис и документы после оформления</p>`}</div>
-      ${sfa ? `<div class="tags" role="group" aria-label="Способ подписания"><button type="button" class="tag" data-act="signway" data-v="pep" aria-pressed="${S.signway==='pep'}">Подпись кодом</button><button type="button" class="tag" data-act="signway" data-v="paper" aria-pressed="${S.signway==='paper'}">На бумаге</button></div>` : ''}
+      ${sfa ? elRadioTags('signway', 'Способ подписания', [{id:'pep', name:'Подпись кодом'}, {id:'paper', name:'На бумаге'}], S.signway) : ''}
       <div>
-        <button type="button" class="check" role="checkbox" aria-checked="${S.agreed}" data-act="agree">${chk(S.agreed)}<span>${paper ? `Клиент согласен с составом и стоимостью страховки ${RUB(c.premium)}` : `${sfa?'Клиент подтверждает':'Подтверждаю'} согласие на взимание и списание страховой премии ${RUB(c.premium)}`}</span></button>
+        <button type="button" class="check" role="checkbox" aria-checked="${S.agreed}" data-act="agree" ${S.agreeErr?'aria-invalid="true" aria-describedby="agree-err"':''}>${chk(S.agreed)}<span>${paper ? `Клиент согласен с составом и стоимостью страховки ${RUB(c.premium)}` : `${sfa?'Клиент подтверждает':'Подтверждаю'} согласие на списание страховой премии ${RUB(c.premium)}`}</span></button>
+        ${S.agreeErr ? `<p class="field__err check__more" id="agree-err">${paper ? 'Отметьте согласие клиента, чтобы сформировать комплект' : 'Отметьте согласие, чтобы подписать и оплатить'}</p>` : ''}
         <button type="button" class="lnk lnk--pseudo t-sm check__more" data-act="consent">Что это значит</button>
       </div>
     </section>
     <div class="flow"><div class="actions">
-      <button type="button" class="btn btn--56 ${PRI()}" data-act="start-sign">${paper ? 'Посмотреть комплект документов' : 'Подписать и оплатить'}</button>
+      <button type="button" class="btn btn--56 ${PRI()}" data-act="start-sign" ${S.agreeErr?'aria-describedby="agree-err"':''}>${paper ? 'Сформировать комплект для подписи' : 'Подписать и оплатить'}</button>
       <button type="button" class="btn btn--56 btn--secondary" data-act="back">Назад</button>
     </div></div>`;
 }
@@ -1215,12 +1316,15 @@ function signCode(){
   setTimeout(()=>{S.step='done';S.signing=false;render();window.scrollTo({top:0,behavior:'smooth'});},700);
 }
 let codeTimer = null;
-function startCode(){
-  Object.assign(S, {code:'', codeArr:[], codeLeft:30, codeTries:3, codeWrong:false});
+function startCode(fresh=true){
+  if(fresh) Object.assign(S, {code:'', codeArr:[], codeLeft:30, codeTries:3, codeWrong:false, codeSentAt:Date.now(), codeSession:true});
+  const left = () => Math.max(0, 30 - Math.floor((Date.now() - S.codeSentAt) / 1000));
+  S.codeLeft = left();
   clearInterval(codeTimer);
+  if(!S.codeLeft) return;
   codeTimer = setInterval(()=>{
     if(!S.signing || S.signed){ clearInterval(codeTimer); return; }
-    S.codeLeft--;
+    S.codeLeft = left();
     if(S.codeLeft<=0){
       clearInterval(codeTimer); const lost = ['code-err','code-in'].includes(document.activeElement.id) && S.codeTries<=0;
       rerenderKeepScroll(); if(lost || document.activeElement===document.body){ const r=document.getElementById('code-resend'); if(r) r.focus(); }
@@ -1235,10 +1339,49 @@ function elConsentDialog(){
   return `<div class="dlg__scrim" data-act="consent-close"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cns-t">
     <div class="dlg__hd"><h3 id="cns-t" tabindex="-1">Согласие на списание премии</h3>
       <button type="button" class="dlg__x" data-act="consent-close" aria-label="Закрыть">${SVG_X}</button></div>
-    <div class="dlg__body"><p class="t-md">${S.channel==='sfa' && S.signway==='paper' ? 'Покажите клиенту состав и стоимость страховки. Для завершения оформления потребуется его подпись на документах.' : `Банк спишет ${RUB(calc().premium)} со счёта ${ACCOUNTS[S.payAccount][0].replace('Расчётный счёт ','')} в день выпуска полиса. Списание разовое, за год вперёд.`}</p></div>
+    <div class="dlg__body"><p class="t-md">${S.channel==='sfa' && S.signway==='paper' ? 'Покажите клиенту состав и стоимость страховки. Для завершения оформления потребуется его подпись на документах.' : `Банк спишет ${RUB(calc().premium)} со счёта ${ACC()} в день выпуска полиса. Списание разовое, за год вперёд.`}</p></div>
     <div class="dlg__ft"><button type="button" class="btn btn--48 ${PRI()}" data-act="consent-close">Понятно</button></div>
   </div></div>`;
 }
+
+const dlg500 = (id, title, body, foot, close) => `<div class="dlg__scrim" data-act="${close}"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="${id}">
+    <div class="dlg__hd"><h3 id="${id}" tabindex="-1">${title}</h3>
+      <button type="button" class="dlg__x" data-act="${close}" aria-label="Закрыть">${SVG_X}</button></div>
+    <div class="dlg__body">${body}</div>
+    <div class="dlg__ft">${foot}</div>
+  </div></div>`;
+/* Застрахованных меньше, чем указано на первом шаге: подтверждение перед подписанием */
+function elMismatchDialog(){
+  if(!S.mismatch) return '';
+  const k = EMPN(), N = S.estimateEmployees, rest = N - k;
+  return dlg500('mm-t', `Застраховать только ${k} из ${N} сотрудников?`,
+    `<p class="t-md">${rest===1 ? 'Ещё один сотрудник не получит ДМС' : `Остальные ${rest} не получат ДМС`}. Добавить их можно сейчас, на этом шаге</p>`,
+    `<button type="button" class="btn btn--48 ${PRI()}" data-act="mismatch-ok">Продолжить с ${k}</button>
+     <button type="button" class="btn btn--48 btn--secondary" data-act="mismatch-add">Добавить остальных</button>`, 'mismatch-close');
+}
+function elManagerDialog(){
+  if(!S.managerReq) return '';
+  return dlg500('mgr-t', 'Заявка менеджеру',
+    `<p class="t-md">Менеджер банка свяжется с вами, чтобы подобрать защиту для компании, которой не подходят условия пакета. В прототипе заявка не отправляется</p>`,
+    `<button type="button" class="btn btn--48 ${PRI()}" data-act="manager-close">Понятно</button>`, 'manager-close');
+}
+/* «Что это значит» у услуги: термины из полиса и их смысл */
+function elExplainDialog(){
+  if(!S.explain) return '';
+  const [sid, oid] = S.explain.split(':'), o = sec(sid).options.find(x=>x.id===oid);
+  return dlg500('exp-t', o.name,
+    `<ul class="list">${o.terms.map(([t,d])=>`<li>${mk()}<span>${t}<small>${d}</small></span></li>`).join('')}</ul>`,
+    `<button type="button" class="btn btn--48 ${PRI()}" data-act="explain-close">Понятно</button>`, 'explain-close');
+}
+function elStaffDelDialog(){
+  if(S.staffDelete==null) return '';
+  const p = S.staff[S.staffDelete]; if(!p) return '';
+  return dlg500('sdel-t', 'Удалить сотрудника?',
+    `<p class="t-md">${esc(p.fio)} не войдёт в страховку${staffFull(p) ? `. ДМС станет дешевле на ${RUB(empRate())} в год` : ''}</p>`,
+    `<button type="button" class="btn btn--48 ${PRI()}" data-act="staff-del-ok">Удалить</button>
+     <button type="button" class="btn btn--48 btn--secondary" data-act="staff-del-close">Отменить</button>`, 'staff-del-close');
+}
+const elDialogs = () => `${elPanel()}${elStaffForm()}${elCodeDialog()}${elConsentDialog()}${elMismatchDialog()}${elManagerDialog()}${elExplainDialog()}${elStaffDelDialog()}${elToast()}`;
 
 /* ── «Подробнее» и «Условия»: UniversalModal справа, 600, фон modal-bg-alt ── */
 function spShell(title, body, foot, intro=null){
@@ -1259,20 +1402,25 @@ function elTermsPanel(){
 }
 /* Фиксированная программа («коробка»): цена как факт — TableView */
 function elFixedFacts(s){
-  const rows = [['Стоимость за сотрудника', `${RUB(s.price)} в год`], ['Сотрудников в договоре', `до ${SCHEMA.rules.maxEmployees}`]];
+  const rows = [['Программа', dmsProgram().name], ['Стоимость за сотрудника', `${RUB(dmsProgram().price)} в год`], ['Сотрудников в договоре', `до ${SCHEMA.rules.maxEmployees}`]];
   return `<div class="grp"><h4 class="grp__t">Предварительный расчёт</h4><div class="tv">${rows.map(([k,val])=>`<div class="tv__row"><span class="tv__k">${k}</span><span class="tv__v">${val}</span></div>`).join('')}</div></div>`;
 }
 /* Количество сотрудников: Input 56 со Stepper в правом аддоне (NumberInput), максимум из правил пакета */
 function elEmployeeEstimate(){
   if(S.step!=='config') return '';
-  const n = S.estimateEmployees, max = SCHEMA.rules.maxEmployees;
+  /* Список уже есть: цена считается по нему, поле числа больше ни на что не влияет */
+  if(S.staff.length) return `<div class="grp"><div class="tv"><div class="tv__row"><span class="tv__k">Сотрудников в списке</span><span class="tv__v">${EMP(EMPN())}</span></div></div>
+    <div><button type="button" class="lnk" data-act="go" data-v="details">Изменить список</button></div></div>`;
+  const n = S.estimateEmployees, max = SCHEMA.rules.maxEmployees, over = S.empOver;
   return `<div class="grp"><div>
-    <div class="field field--number"><label for="estimate-employees">Количество сотрудников</label>
-      <input id="estimate-employees" data-act="emp-estimate" data-mask="count" data-max="${max}" inputmode="numeric" autocomplete="off" value="${n}" placeholder="0" aria-describedby="estimate-hint">
+    <div class="field field--number${over?' field--err':''}"><label for="estimate-employees">Количество сотрудников</label>
+      <input id="estimate-employees" data-act="emp-estimate" data-mask="count" data-max="${max}" inputmode="numeric" autocomplete="off" value="${n}" placeholder="0" aria-describedby="${over?'estimate-err':'estimate-hint'}" ${over?'aria-invalid="true"':''}>
       <span class="field__addons"><span class="stepper">
         <button type="button" data-act="emp-step" data-v="-1" aria-label="Уменьшить число сотрудников" ${n===0?'disabled':''}>${SVG_MINUS}</button><i aria-hidden="true"></i>
-        <button type="button" data-act="emp-step" data-v="1" aria-label="Увеличить число сотрудников" ${n===max?'disabled':''}>${SVG_PLUS24}</button></span></span></div>
-    <p class="field__sub" id="estimate-hint">${RUB(sec('dms').price)} на сотрудника в год без платных услуг, до ${max} сотрудников. Данные сотрудников добавьте на следующем шаге</p></div></div>`;
+        <button type="button" data-act="emp-step" data-v="1" aria-label="Увеличить число сотрудников">${SVG_PLUS24}</button></span></span></div>
+    ${over ? `<p class="field__err" id="estimate-err">В пакете до ${max} сотрудников</p>`
+      : `<p class="field__sub" id="estimate-hint">До ${max} сотрудников. На следующем шаге понадобятся ФИО, дата рождения, телефон и email каждого</p>`}</div>
+    ${over ? elLimitRoute(`Для компании больше ${max} человек оформим защиту через менеджера`) : ''}</div>`;
 }
 /* Поле суммы: вводится руками, сохраняются только границы диапазона (как в таблице) */
 function elMoneyField(sid, key, label, hint){
@@ -1288,51 +1436,74 @@ function elMoneyField(sid, key, label, hint){
       <span class="field__suffix" aria-hidden="true"><b>${view}</b><span>${THINSP}₽</span></span></div>
     <p class="${err?'field__err':'field__sub'}" id="${id}-sub">${sub}</p></div>`;
 }
+const overMax = s => s.per==='limit' ? +S.sel.liability.limit > s.max : s.objects.some(o=>+S.sel.prop.sums[o.id] > o.max);
 function elSumControls(s){
-  if(s.per==='object') return `<div class="grp"><h4 class="grp__t">Страховые суммы</h4><div class="fields">
-    ${s.objects.map(o=>elMoneyField('prop', o.id, o.name, o.required ? `От ${MLN(o.min)} до ${MLN(o.max)}` : `От ${MLN(o.min)} до ${MLN(o.max)}, пусто — не страхуется`)).join('')}
-  </div></div>`;
+  if(s.per==='object'){
+    return `<div class="grp"><h4 class="grp__t">Страховые суммы</h4><div class="fields">
+    ${s.objects.map(o=>elMoneyField('prop', o.id, o.name, o.required ? `${o.what}, ${RANGE(o.min, o.max)}` : `${RANGE(o.min, o.max).replace('от','От')}, необязательно`)).join('')}
+  </div>${overMax(s) ? elLimitRoute('Для сумм больше лимитов пакета оформим защиту через менеджера') : ''}</div>`; }
   if(s.per==='limit') return `<div class="grp"><h4 class="grp__t">Лимит ответственности</h4>
     ${liabilityAllowed() ? '' : `<div class="note"><span>Оформляется только вместе с имуществом или ДМС</span></div>`}
-    ${elMoneyField('liability', 'limit', 'Лимит', `От ${MLN(s.min)} до ${MLN(s.max)}`)}</div>`;
-  return S.step==='config' ? elEmployeeEstimate() : elFixedFacts(s);
+    ${elMoneyField('liability', 'limit', 'Лимит', `Сколько выплатим по претензиям посетителей, соседей и арендодателя, ${RANGE(s.min, s.max)}`)}
+    ${overMax(s) ? elLimitRoute('Для сумм больше лимитов пакета оформим защиту через менеджера') : ''}</div>`;
+  return `${S.step==='config' ? elEmployeeEstimate() : elFixedFacts(s)}${elDmsPrograms(s)}`;
+}
+/* RadioGroup type="tag": Tag 40 с нативным radio внутри — стрелки переключают выбор */
+function elRadioTags(name, label, items, cur, sub='', err=''){
+  const desc = err || sub ? `aria-describedby="${name}-sub"` : '';
+  return `<div class="grp"><div><div class="rgroup" role="radiogroup" aria-labelledby="${name}-label" ${desc}><p class="rgroup__label" id="${name}-label">${label}</p>
+    <div class="tags">${items.map(it=>`<label class="tag tag--40${it.id===cur?' is-checked':''}"><input type="radio" class="sr" name="${name}" data-act="${name}" value="${it.id}" ${it.id===cur?'checked':''} ${err?'aria-invalid="true"':''}>${it.name}</label>`).join('')}</div></div>
+    ${err ? `<p class="field__err" id="${name}-sub">${err}</p>` : sub ? `<p class="field__sub" id="${name}-sub">${sub}</p>` : ''}</div></div>`;
+}
+/* Программа ДМС: выбор (Radio) показываем, только если программ больше одной */
+function elDmsPrograms(s){
+  if(s.programs.length < 2) return '';
+  const cur = dmsProgram(), per = S.step==='config' && !quoteEmployees();
+  return `<div class="grp"><h4 class="grp__t" id="dms-program-label">Программа</h4><div class="opts" role="radiogroup" aria-labelledby="dms-program-label">${s.programs.map(p=>{
+    const id = `dms-program-${p.id}`, n = quoteEmployees();
+    return `<label class="opt" for="${id}">
+      <input type="radio" class="module-choice module-choice--radio" id="${id}" name="dms-program" data-act="dms-program" value="${p.id}" ${p.id===cur.id?'checked':''}>
+      <span class="opt__main"><span class="opt__t">${p.name}</span><span class="opt__s">${p.desc}</span></span>
+      <span class="opt__r">${per||!n ? `${RUB(p.price)}<small>на сотрудника в год</small>` : `${RUB(p.price*n)}<small>в год за ${EMPG(n)} · ${RUB(p.price)} за каждого</small>`}</span>
+    </label>`;}).join('')}</div></div>`;
 }
 function elModuleControls(s, place='inline'){
   const sel=S.sel[s.id], disabled=place==='inline'&&!sel.on;
   return `<div class="module-controls">
-    ${disabled?'<p class="t-sm sec">Включите модуль для настройки</p>':''}
-    <fieldset ${disabled?'disabled':''} aria-label="Условия модуля ${s.name}">
+    ${disabled?'<p class="t-sm sec">Включите, чтобы настроить</p>':''}
+    <fieldset ${disabled?'disabled':''} aria-label="Условия: ${s.name}">
       ${elSumControls(s)}
       ${s.options.length?`<div class="grp"><h4 class="grp__t">Платные услуги</h4><div class="opts">${s.options.map(o=>{
         const id=`opt-${place}-${s.id}-${o.id}`, isOn=sel.opts.includes(o.id);
         return `<label class="opt" for="${id}">
           <input type="checkbox" class="module-choice module-choice--check" id="${id}" data-act="opt-input" data-v="${s.id}:${o.id}" ${isOn?'checked':''}>
-          <span class="opt__main"><span class="opt__t">${o.name}</span><span class="opt__s">${o.desc}</span></span>
+          <span class="opt__main"><span class="opt__t">${o.name}</span><span class="opt__s">${optDesc(o)}</span></span>
           <span class="opt__r">${(([sum,unit])=>`+ ${sum}<small>${unit}</small>`)(optCost(s.id,o))}</span>
         </label>`;
-      }).join('')}</div></div>`:''}
+      }).join('')}</div>${s.options.filter(o=>o.terms).map(o=>`<div><button type="button" class="lnk lnk--pseudo t-sm" data-act="terms-explain" data-v="${s.id}:${o.id}">Что значит «${o.name}»</button></div>`).join('')}</div>`:''}
     </fieldset>
-    <details class="module-coverage"><summary>Что покрывает модуль</summary><ul class="list">${s.base.map(b=>`<li>${mk()}<span>${b}</span></li>`).join('')}</ul></details>
+    <details class="module-coverage"><summary>Что покрывает защита</summary><ul class="list">${s.base.map(b=>`<li>${mk()}<span>${b}</span></li>`).join('')}</ul></details>
   </div>`;
 }
 function elPanel(){
   if(!S.panel) return '';
   if(S.panel==='terms') return elTermsPanel();
+  if(S.panel.startsWith('doc:')) return elDocPanel(S.panel.slice(4));
   const s = sec(S.panel);
   /* Как «Подробнее» в макете: иллюстрация и название, факты с иконками,
      «Что входит в страховку», документы; одна кнопка «Рассчитать» */
   const facts = s.per==='employee'
-    ? [[SVG_WALLET, `${RUB(minPrice(s.id))} в год за сотрудника`, 'Одна программа для всех сотрудников, фиксированная цена'],
-       [SVG_PEOPLE, 'От 1 сотрудника', 'Сотрудников добавите при оформлении']]
+    ? [[SVG_WALLET, `${RUB(minPrice(s.id))} в год за сотрудника`, 'Одна программа для всех сотрудников'],
+       [SVG_PEOPLE, `От 1 до ${SCHEMA.rules.maxEmployees} сотрудников`, 'Сотрудников добавите при оформлении']]
     : s.per==='limit'
     ? [[SVG_WALLET, `от ${RUB(minPrice(s.id))} в год`, 'Зависит от лимита ответственности'],
-       [SVG_SHIELD, `Лимит от ${MLN(s.min)} до ${MLN(s.max)}`, 'Только вместе с имуществом или ДМС']]
-    : [[SVG_WALLET, `от ${RUB(minPrice(s.id))} в год`, 'Зависит от страховых сумм'],
-       [SVG_HOUSE, `Отделка от ${MLN(s.objects[0].min)} до ${MLN(s.objects[0].max)}`, 'Товар и оборудование по выбору, до 5 млн ₽ каждое']];
+       [SVG_SHIELD, `Лимит ${RANGE(s.min, s.max)}`, 'Только вместе с имуществом или ДМС']]
+    : [[SVG_WALLET, `от ${RUB(singleFrom(s.id))} в год`, `Минимальная стоимость страховки — ${RUB(SCHEMA.rules.minPremium)} в год`],
+       [SVG_HOUSE, `Помещение от ${MLN(s.objects[0].min)} до ${MLN(s.objects[0].max)}`, 'С конструктивом, отделкой и инженерным оборудованием. Оборудование и товар по выбору, до 5 млн ₽ каждое']];
   return spShell(s.name,
     `<div class="plate plate--tight">${facts.map(([icon,t,d])=>`<div class="fact"><span class="fact__ico" aria-hidden="true">${icon}</span><span><span class="fact__t">${t}</span><span class="fact__s">${d}</span></span></div>`).join('')}</div>
       <div class="plate"><h4 class="t-h3">Что входит в страховку</h4><ul class="list">${s.base.map(b=>`<li>${mk()}<span>${b}</span></li>`).join('')}</ul></div>
-      ${s.options.length?`<div class="plate"><h4 class="t-h3">За дополнительную плату</h4><ul class="list">${s.options.map(o=>`<li>${mk()}<span>${o.name}<small>${o.desc}</small></span></li>`).join('')}</ul></div>`:''}
+      ${s.options.length?`<div class="plate"><h4 class="t-h3">За дополнительную плату</h4><ul class="list">${s.options.map(o=>`<li>${mk()}<span>${o.name}<small>${optDesc(o)}</small></span></li>`).join('')}</ul></div>`:''}
       <div class="plate">${elDocList(SCHEMA.docs.slice(0,2))}</div>`,
     `<button type="button" class="btn btn--48 ${PRI()}" data-act="single" data-v="${s.id}">Рассчитать</button>`,
     [ART[s.id]||ART.pkg, `<p class="t-md">${s.short}</p>`]);
@@ -1360,7 +1531,7 @@ function nibShell(inner){
       </div>
       <div class="body">${inner}</div>
     </div>
-    ${elPanel()}${elStaffForm()}${elCodeDialog()}${elConsentDialog()}${elToast()}
+    ${elDialogs()}
   </div>`;
 }
 function elSingleCard(sid, title, subtitle, facts, art){
@@ -1376,11 +1547,11 @@ function elSingleCard(sid, title, subtitle, facts, art){
 function nibShowcase(){
   return nibShell(`<div class="page">
     <div class="page__hd"><h1 class="t-h1">Страховки для бизнеса</h1><p class="t-md">Страховые услуги оказывает страховая компания-партнёр банка</p></div>
-    ${elPackagePlacements()}
+    ${elResume()}${elPackagePlacements()}
     <section class="sect" id="standalone-insurance" aria-labelledby="standalone-insurance-title">
       <div class="page__hd"><h2 class="t-h3" id="standalone-insurance-title">Отдельные страховки</h2><p class="t-md">Если нужен один вид защиты, его можно оформить без комплексного пакета</p></div>
       <div class="grid">
-        ${elSingleCard('dms','ДМС','Онлайн-консультации и медицинская помощь в клиниках программы',[['Стоимость за сотрудника',`${RUB(minPrice('dms'))} в год`]],ART.dms)}
+        ${elSingleCard('dms','ДМС','Безлимитные очные приёмы врачей и исследования по назначению',[['Стоимость за сотрудника',`${RUB(minPrice('dms'))} в год`]],ART.dms)}
       </div>
     </section>
   </div>`);
@@ -1390,38 +1561,55 @@ function configCheck(){
   const sel = S.sel, R = SCHEMA.rules, p = sec('prop'), l = sec('liability'), n = SCHEMA.sections.filter(s=>sel[s.id].on).length;
   const out = (v,o) => v < o.min || v > o.max;
   const sums = sel.prop.sums, emp = quoteEmployees();
-  if(sel.liability.on && !liabilityAllowed()) return ['liability','ГО нельзя оформить отдельно: добавьте имущество или ДМС'];
-  if(n < R.minModules || n > R.maxModules) return [null,`Выберите от ${R.minModules} до ${R.maxModules} модулей`];
-  if(sel.prop.on && !+sums.build) return ['prop','Имущество: укажите страховую сумму по отделке'];
-  if(sel.prop.on && out(+sums.build, p.objects[0])) return ['prop','Имущество: сумма по отделке вне диапазона'];
-  if(sel.prop.on && +sums.stock > 0 && out(+sums.stock, p.objects[1])) return ['prop','Имущество: сумма по товарным запасам вне диапазона'];
-  if(sel.prop.on && +sums.equip > 0 && out(+sums.equip, p.objects[2])) return ['prop','Имущество: сумма по оборудованию вне диапазона'];
+  if(sel.liability.on && !liabilityAllowed()) return ['liability','Гражданскую ответственность нельзя оформить отдельно: добавьте имущество или ДМС'];
+  if(n < R.minModules || n > R.maxModules) return [null,`Выберите от ${R.minModules} до ${R.maxModules} видов защиты`];
+  const obj = id => p.objects.find(o=>o.id===id);
+  if(sel.prop.on && !+sums.build) return ['prop','Имущество: укажите страховую сумму по помещению'];
+  if(sel.prop.on && out(+sums.build, obj('build'))) return ['prop','Имущество: сумма по помещению вне диапазона'];
+  if(sel.prop.on && +sums.stock > 0 && out(+sums.stock, obj('stock'))) return ['prop','Имущество: сумма по товарным запасам вне диапазона'];
+  if(sel.prop.on && +sums.equip > 0 && out(+sums.equip, obj('equip'))) return ['prop','Имущество: сумма по оборудованию вне диапазона'];
   if(sel.dms.on && !emp) return ['dms','ДМС: укажите количество сотрудников'];
   if(sel.dms.on && emp > R.maxEmployees) return ['dms',`ДМС: не больше ${R.maxEmployees} сотрудников`];
-  if(sel.liability.on && !+sel.liability.limit) return ['liability','ГО: укажите лимит'];
-  if(sel.liability.on && out(+sel.liability.limit, l)) return ['liability','ГО: лимит вне диапазона'];
+  if(sel.liability.on && !+sel.liability.limit) return ['liability','Гражданская ответственность: укажите лимит'];
+  if(sel.liability.on && out(+sel.liability.limit, l)) return ['liability',`Гражданская ответственность: лимит ${RANGE(l.min, l.max)}`];
   return [null,''];
 }
 function configBlock(){ return configCheck()[1]; }
 function badModule(){ return configCheck()[0]; }
 function detailsBlock(){
   const c = calc();
-  if(S.sel.dms.on && !EMPN()) return 'Добавьте в ДМС хотя бы одного сотрудника';
+  if(S.sel.dms.on && !EMPN()){
+    const p = S.staff.find(x=>!staffFull(x)); if(!p) return 'Добавьте в ДМС хотя бы одного сотрудника';
+    const miss = staffMiss(p);
+    return `Пока никто не застрахован: у ${esc(p.fio)} ${miss.length ? `не хватает: ${miss.join(', ')}` : 'есть ошибка в данных'}`;
+  }
   if(S.sel.dms.on && EMPN() > SCHEMA.rules.maxEmployees) return `ДМС: не больше ${SCHEMA.rules.maxEmployees} сотрудников`;
   const byAddr = S.sel.prop.on || S.sel.liability.on;
   if(byAddr && !S.addresses[0].addr.trim()) return 'Укажите адрес помещения';
-  return '';
+  return accountError();
 }
-/* Под блоками, как в макете: «Сумма» (Amount), второй показатель и Button 56 */
+/* Под блоками, как в макете: «Сумма за год» (Amount), второй показатель и Button 56.
+   Сумма видна всегда; требование — под ней и только после попытки продолжить */
+function topupNote(c){
+  if(!c.topup) return '';
+  if(S.flow==='single') return `Включает доплату до минимальной стоимости страховки ${RUB(SCHEMA.rules.minPremium)} — ${RUB(c.topup)}. Защиту можно расширить без роста цены`;
+  const fits = SCHEMA.sections.filter(s=>!S.sel[s.id].on && s.per!=='employee' && minPrice(s.id) <= c.topup && (s.id!=='liability' || liabilityAllowed()))
+    .map(s=>s.per==='limit' ? `${s.name.toLowerCase()} с лимитом ${MLN(s.min)}` : s.name.toLowerCase());
+  return `Включает доплату до минимальной стоимости — ${RUB(c.topup)}. ${fits.length ? `Без роста цены можно добавить ${fits.join(' или ')}` : 'Защиту можно расширить без роста цены'}`;
+}
 function flowBar(target, block){
-  const c = calc();
-  const second = S.sel.dms.on ? ['Застрахованные', String(target==='details' ? quoteEmployees() : EMPN())]
-    : ['Модулей', String(calc().onIds.length)];
-  return `<div class="flow">
-    ${block ? `<p class="flow__msg" id="config-block">${block}</p>`
-      : `<div class="flow__nums"><div class="flow__num"><span>${target==='details'?'Предварительная сумма':'Сумма'}</span><b>${AMOUNT(c.premium)}</b></div>
-      <div class="flow__num"><span>${second[0]}</span><b>${second[1]}</b></div></div>`}
-    <div class="actions"><button type="button" class="btn btn--56 ${PRI()}" data-act="go" data-v="${target}" ${block?'aria-describedby="config-block"':''}>Продолжить</button><button type="button" class="btn btn--56 btn--transparent" data-act="terms">Условия страхования</button></div>
+  /* Пока число сотрудников не указано, сумма и доплата считаются с одним сотрудником — «от» */
+  const pending = dmsPending(), c = pending ? calcAt(1) : calc(), shown = block && (target==='details' ? S.showErrors : S.showErrorsDetails);
+  const first = pending ? `от ${AMOUNT(c.premium)}` : AMOUNT(c.premium);
+  const second = pending ? ['За каждого сотрудника', RUB(empRate())]
+    : S.sel.dms.on ? ['Застрахованные', `${quoteEmployees()}${EMPN() ? '' : ', предварительно'}`]
+    : ['Видов защиты', String(c.onIds.length)];
+  return `<div class="flow flow--sticky">
+    <div class="flow__nums"><div class="flow__num"><span>Сумма за год</span><b>${first}</b></div>
+      <div class="flow__num"><span>${second[0]}</span><b>${second[1]}</b></div></div>
+    ${topupNote(c) ? `<p class="flow__note">${topupNote(c)}</p>` : ''}
+    ${shown ? `<p class="field__err" id="config-block" role="alert">${block}</p>` : ''}
+    <div class="actions"><button type="button" class="btn btn--56 ${PRI()}" data-act="go" data-v="${target}" ${shown?'aria-describedby="config-block"':''}>Продолжить</button><button type="button" class="btn btn--56 btn--transparent" data-act="terms">Условия страхования</button></div>
   </div>`;
 }
 function configBar(){ return flowBar('details',configBlock()); }
@@ -1431,18 +1619,18 @@ function nibConfig(){
   const isPackage = S.flow==='package';
   return nibShell(`<div class="page">
     <div class="page__hd${isPackage?' package-landing__head':''}"><h1 class="t-h1">${prodTitle()}</h1>
-      <p>${isPackage?'Имущество, здоровье сотрудников и ответственность перед третьими лицами':'Оформление страховки'}</p>
+      ${isPackage?'':'<p>Оформление страховки</p>'}
       ${isPackage?'<p class="t-sm">Цены и лимиты показаны для примера</p>':''}</div>
     ${isPackage?`<section class="sect package-landing__benefits" aria-labelledby="package-benefits-title">
       <h2 class="t-h3" id="package-benefits-title">Как защита помогает бизнесу</h2>
       <ul class="package-benefits">
         <li class="card package-benefit">
           <div class="package-benefit__head"><h3 class="t-h4">Защита имущества</h3>${ART.prop}</div>
-          <p>Ремонт и замена отделки, оборудования и товара после пожара, залива или кражи</p>
+          <p>Ремонт помещения, замена оборудования и товара после пожара, залива или кражи</p>
         </li>
         <li class="card package-benefit">
           <div class="package-benefit__head"><h3 class="t-h4">ДМС</h3>${ART.dms}</div>
-          <p>Консультации врачей, приём в клиниках и обследования для сотрудников по программе</p>
+          <p>Безлимитные очные приёмы врачей и исследования по назначению для сотрудников</p>
         </li>
         <li class="card package-benefit">
           <div class="package-benefit__head"><h3 class="t-h4">Гражданская ответственность</h3><span class="benefit-people">${ico('Контрагенты')}</span></div>
@@ -1453,8 +1641,8 @@ function nibConfig(){
     <div class="cols">
       <div class="colmain">
         <section class="block" id="package-customization"><div class="block__hd"><h2 class="t-h3">${isPackage?'Состав защиты':'Параметры страхования'}</h2>
-          ${isPackage?`<p>Выберите от ${SCHEMA.rules.minModules} до ${SCHEMA.rules.maxModules} модулей. Гражданская ответственность — только вместе с имуществом или ДМС</p>`:''}</div>
-          ${elWarn()}${elSections()}</section>
+          ${isPackage?`<p>Минимальная стоимость пакета — ${RUB(SCHEMA.rules.minPremium)} в год</p>`:''}</div>
+          ${elWarn()}${elPresetNote()}${elSections()}</section>
         ${configBar()}
       </div>
       <div class="rail">${elSteps(0)}</div>
@@ -1497,7 +1685,7 @@ function elDone(title, text, extra, back){
 function nibDone(){
   return nibShell(`<div class="page">
     <div class="page__hd"><h1 class="t-h1">${prodTitle()}</h1></div>
-    ${elDone('Демонстрация завершена', `Полис не оформлен, письмо на ${esc(S.payMail)} не отправлено, деньги не списаны`, elPolicy(), 'К страховкам')}
+    ${elDone('Демонстрация завершена', `Полис не оформлен, письмо на ${esc(S.payMail)} не отправлено, деньги не списаны`, elPolicy() + elAfter(), 'К страховкам')}
   </div>`);
 }
 
@@ -1514,18 +1702,21 @@ function sfaShell(content){
       <div class="sfa__tabs">${['Карточка','Продукты','Страхование','Сделки','История'].map(t=>`<span class="${t==='Страхование'?'is-on':''}">${t}</span>`).join('')}</div>
       <div class="sfa__work">${content}</div>
     </div>
-    ${elPanel()}${elStaffForm()}${elCodeDialog()}${elConsentDialog()}${elToast()}
+    ${elDialogs()}
   </div>`;
 }
 function elSfaRecommendation(){
-  const savedStaff = S.staff;
-  S.staff = [];
+  /* Цена без сотрудников и с одним: из-за минимальной премии разница не равна цене ДМС */
+  const saved = {staff:S.staff, step:S.step, est:S.estimateEmployees};
+  S.staff = []; S.step = 'config'; S.estimateEmployees = 0;
   const c = presetCalc('reco');
-  S.staff = savedStaff;
+  S.estimateEmployees = 1;
+  const c1 = presetCalc('reco');
+  S.staff = saved.staff; S.step = saved.step; S.estimateEmployees = saved.est;
   const perEmployee = presetEmployeeIncrement('reco');
   const reasons = [
-    ['Имущество магазина','Уточнить стоимость отделки, оборудования и товара по каждому адресу'],
-    ['Сотрудники','Уточнить количество для расчёта ДМС и необходимость платных услуг'],
+    ['Имущество магазина','Уточнить стоимость помещения, оборудования и товара'],
+    ['Сотрудники','Уточнить количество для расчёта ДМС и нужна ли стоматология'],
     ['Посетители и соседи','Выбрать отдельный лимит ответственности за ущерб третьим лицам']
   ];
   return `<section class="sfa-reco" aria-labelledby="sfa-reco-title">
@@ -1542,7 +1733,7 @@ function elSfaRecommendation(){
         </div>
       </div>
       <div class="sfa-reco__aside">
-        <div class="sfa-reco__price"><span>Предварительная стоимость</span><b>от ${RUB(c.premium)} в год</b><small>Дополнительно ${RUB(perEmployee)} в год за сотрудника с ДМС</small></div>
+        <div class="sfa-reco__price"><span>Предварительная стоимость</span><b>от ${RUB(c.premium)} в год</b><small>С ДМС на 1 сотрудника ${RUB(c1.premium)}, каждый следующий +${RUB(perEmployee)} в год</small></div>
         <p class="t-sm sec">Перед оформлением уточните адреса, стоимость имущества, лимит ответственности и число сотрудников</p>
         <div class="sfa-reco__actions"><button type="button" class="btn btn--48 btn--primary" data-act="preset-go" data-v="reco">Перейти к оформлению</button></div>
       </div>
@@ -1556,12 +1747,12 @@ function sfaProducts(){
     </div>`;
   return `<div class="sfa__panel">
     <div class="page__hd"><h1 class="t-h2">Страхование</h1><p class="t-md">Предложения и оформление для ${CLIENT.name}</p></div>
-    ${elSfaRecommendation()}
+    ${elResume()}${elSfaRecommendation()}
     <section class="sect">
       <div class="page__hd"><h2 class="t-h3">Отдельные страховки</h2><p class="t-md">Их можно оформить отдельно, без комплексного пакета</p></div>
       <div class="cells">
       ${single('dms','ДМС',[['Стоимость за сотрудника',`${RUB(minPrice('dms'))} в год`]])}
-      ${single('prop','Защита имущества',[['Стоимость',`от ${RUB(minPrice('prop'))} в год`],['Отделка',`от ${MLN(sec('prop').objects[0].min)} до ${MLN(sec('prop').objects[0].max)}`],['Товар и оборудование',`до ${MLN(sec('prop').objects[1].max)}`]])}
+      ${single('prop','Защита имущества',[['Стоимость',`от ${RUB(singleFrom('prop'))} в год`],['Помещение',`от ${MLN(sec('prop').objects[0].min)} до ${MLN(sec('prop').objects[0].max)}`],['Оборудование и товар',`до ${MLN(sec('prop').objects[1].max)}`]])}
       </div>
     </section>
   </div>`;
@@ -1574,10 +1765,10 @@ function sfaConfig(){
     <div class="page__hd"><h1 class="t-h2">${prodTitle()}</h1><p>Оформление страховки</p></div>
     <div class="cols">
       <div class="colmain">
-        <section class="block"><h2 class="t-h3">${S.flow==='package'?'Состав защиты':'Параметры страхования'}</h2>${elWarn()}${elSections()}</section>
+        <section class="block"><h2 class="t-h3">${S.flow==='package'?'Состав защиты':'Параметры страхования'}</h2>${elWarn()}${elPresetNote()}${elSections()}</section>
         ${configBar()}
       </div>
-      <div class="rail">${elSteps(0)}</div>
+      <div class="rail">${elSteps(0)}${elBankFee()}</div>
     </div>
   </div>`);
 }
@@ -1591,7 +1782,7 @@ function sfaDetails(){
       ${S.sel.dms.on ? `<section class="block">${elStaff()}</section>` : ''}
       ${elAccount()}
       ${detailsBar()}
-    </div><div class="rail">${elSteps(1)}</div></div>
+    </div><div class="rail">${elSteps(1)}${elBankFee()}</div></div>
   </div>`);
 }
 function sfaCheckout(){
@@ -1600,7 +1791,7 @@ function sfaCheckout(){
     <div class="page__hd"><h1 class="t-h2">${prodTitle()}</h1><p>Оформление страховки</p></div>
     <div class="cols">
       <div class="colmain">${elCheckoutBlocks()}</div>
-      <div class="rail">${elSteps(2)}</div>
+      <div class="rail">${elSteps(2)}${elBankFee()}</div>
     </div>
   </div>`);
 }
@@ -1608,10 +1799,59 @@ function sfaDone(){
   const paper = S.signway==='paper';
   return sfaShell(`<div class="page">
     ${paper
-      ? elDone('Образец комплекта для подписи', 'Документы не сформированы и не отправлены клиенту',
-          `<div class="policy"><div class="policy__hd"><div class="t-h3">Комплект для подписи</div><div class="t-sm sec">${CLIENT.name} · предварительная стоимость ${RUB(calc().premium)} в год</div></div>${elDocs()}</div>`, 'К продуктам клиента')
-      : elDone('Демонстрация завершена', `Полис не оформлен, письмо на ${esc(S.payMail)} не отправлено, деньги не списаны`, elPolicy(), 'К продуктам клиента')}
+      ? elDone('Комплект для подписи', 'В прототипе документы не формируются и не отправляются',
+          `<div class="policy"><div class="policy__hd"><div class="t-h3">${CLIENT.name}</div><div class="t-sm sec">Стоимость ${RUB(calc().premium)} в год</div></div>
+            <div><span class="status status--24">Ожидает подписи клиента</span></div>
+            <div class="done__steps">${elStepList(['Распечатайте комплект','Клиент подписывает договор и заявление','Загрузите скан подписанных документов в карточку сделки'], 0)}</div>
+            <div><button type="button" class="btn btn--48 btn--secondary btn--addon" data-act="kit-download">${btnIcon(SVG_DL)}Скачать комплект</button></div>
+            ${elDocs()}</div>`, 'К продуктам клиента')
+      : elDone('Демонстрация завершена', `Полис не оформлен, письмо на ${esc(S.payMail)} не отправлено, деньги не списаны`, elPolicy() + elAfter(), 'К продуктам клиента')}
   </div>`);
+}
+
+/* ═══════════ ЧЕРНОВИК ══════════════════════════════════════════
+   Оформление переживает перезагрузку и «назад» браузера. Только вкладка
+   (sessionStorage); согласие и подпись после восстановления даются заново. */
+const DRAFT_KEY = 'alfa360-draft';
+const DRAFT_FIELDS = ['channel','step','flow','singleModule','sel','staff','estimateEmployees','addresses','payAccount','payMail','signway'];
+const store = () => { try { return typeof sessionStorage!=='undefined' ? sessionStorage : null; } catch { return null; } };
+function loadDraft(){ try { const d = JSON.parse(store()?.getItem(DRAFT_KEY) || 'null'); return d && ['config','details','checkout'].includes(d.step) ? d : null; } catch { return null; } }
+function saveDraft(){
+  try {
+    if(S.step==='done') { store()?.removeItem(DRAFT_KEY); return; }
+    if(!['config','details','checkout'].includes(S.step)) return;
+    store()?.setItem(DRAFT_KEY, JSON.stringify(Object.fromEntries(DRAFT_FIELDS.map(k=>[k, S[k]]))));
+  } catch {}
+}
+const dropDraft = () => { try { store()?.removeItem(DRAFT_KEY); } catch {} };
+/* Строка «Продолжить оформление» на витрине — Cell, как строки «Состава пакета» */
+function elResume(){
+  const d = loadDraft(); if(!d || d.channel!==S.channel) return '';
+  const saved = S.sel, flow = S.flow, sm = S.singleModule; S.sel = d.sel; S.flow = d.flow; S.singleModule = d.singleModule;
+  const title = prodTitle(), p = calc().premium; S.sel = saved; S.flow = flow; S.singleModule = sm;
+  return `<div class="isle"><div class="cells cells--last"><button type="button" class="cell" data-act="draft-resume">
+    <span class="cell__main"><span class="cell__t">Продолжить оформление</span><span class="cell__s">${title}</span></span>
+    <span class="cell__r"><b>${p ? RUB(p) : ''}</b><span>в год</span></span></button></div></div>`;
+}
+/* Состав отличается от исходного — можно вернуть одним нажатием (US-08) */
+const presetKey = sel => JSON.stringify(SCHEMA.sections.map(s=>sel[s.id]));
+function elPresetNote(){
+  if(S.flow!=='package' || presetKey(S.sel)===presetKey(SCHEMA.presets.find(p=>p.id==='reco').sel)) return '';
+  return `<div class="note" role="status"><span>Состав изменён. <button type="button" class="lnk" data-act="preset" data-v="reco">Вернуть исходный состав</button></span></div>`;
+}
+/* История браузера: каждый шаг — запись, «назад» браузера совпадает с кнопкой «Назад» */
+let histIdx = 0;
+function syncHistory(){
+  try {
+    if(typeof history==='undefined' || !history.pushState) return;
+    if(!history.state || history.state.i==null) history.replaceState({step:S.step, i:0}, '');
+    else if(history.state.step!==S.step){ histIdx = history.state.i + 1; history.pushState({step:S.step, i:histIdx}, '', '#'+S.step); }
+  } catch {}
+}
+function closeLayers(){
+  Object.assign(S, {panel:null, consent:false, mismatch:false, managerReq:false, explain:null, staffDelete:null, staffMenu:null, warn:null});
+  if(S.staffEdit!==null){ S.staffEdit=null; S.staffDraft=null; S.staffErr=null; }
+  if(S.signing && !S.signed){ S.signing=false; clearInterval(codeTimer); }
 }
 
 /* ═══════════ РЕНДЕР ════════════════════════════════════════════ */
@@ -1624,15 +1864,20 @@ const app = document.getElementById('app');
 const live = document.getElementById('live');
 /* Верхний слой поверх страницы: диалог согласия → диалог ПЭП → боковая панель.
    При открытии фокус уходит в заголовок слоя, при закрытии — на кнопку, открывшую его. */
-const layer = () => S.consent ? 'consent' : (S.signing && S.step==='checkout') ? 'code' : S.staffEdit!==null && S.staffDraft ? 'staff' : S.panel ? 'panel:'+S.panel : null;
+const layer = () => S.consent ? 'consent' : S.mismatch ? 'mismatch' : S.managerReq ? 'manager' : S.explain ? 'explain' : S.staffDelete!=null ? 'staff-del'
+  : (S.signing && S.step==='checkout') ? 'code' : S.staffEdit!==null && S.staffDraft ? 'staff' : S.panel ? 'panel:'+S.panel : null;
 /* Окно кода открывается с кареткой в первой ячейке, как CodeInput в приложении */
-const LAYER_TITLE = {consent:'#cns-t', code:'#code-in', staff:'#stf-t'};
-const layerOpener = l => l==='consent' ? '[data-act="consent"]' : l==='code' ? '[data-act="start-sign"]' : l==='staff' ? '[data-act="staff-add"]'
-  : l==='panel:terms' ? '[data-act="terms"]' : `[data-act="panel"][data-v="${l.slice(6)}"]`;
+const LAYER_TITLE = {consent:'#cns-t', code:'#code-in', staff:'#stf-t', mismatch:'#mm-t', manager:'#mgr-t', explain:'#exp-t', 'staff-del':'#sdel-t'};
+const layerOpener = l => l==='consent' ? '[data-act="consent"]' : l==='code' ? '[data-act="start-sign"]' : l==='staff' || l==='staff-del' ? '[data-act="staff-add"]'
+  : l==='mismatch' ? '[data-act="go"][data-v="checkout"]' : l==='manager' ? '[data-act="manager-request"]' : l==='explain' ? '[data-act="terms-explain"]'
+  : l==='panel:terms' ? '[data-act="terms"]' : l.startsWith('panel:doc:') ? `[data-act="doc"][data-v="${l.slice(10)}"]` : `[data-act="panel"][data-v="${l.slice(6)}"]`;
 let lastLayer = null;
 function afterRender(){
+  const bar = app.querySelector('.flow--sticky');
+  document.documentElement.style.setProperty('--flow-h', `${bar ? bar.offsetHeight : 0}px`);
   const c = calc();
-  live.textContent = `Предварительная стоимость ${RUB(c.premium)} в год. Лимиты по каждой программе указаны отдельно`;
+  live.textContent = dmsPending() ? `Сумма за год от ${RUB(calcAt(1).premium)}, за каждого сотрудника ${RUB(empRate())}`
+    : `Сумма за год ${RUB(c.premium)}${c.topup?`, включая доплату до минимальной стоимости ${RUB(c.topup)}`:''}. Суммы и лимиты — по каждому виду защиты отдельно`;
   const l = layer();
   if(l && l !== lastLayer){
     const h = app.querySelector(LAYER_TITLE[l] || '#sp-title'); if(h) h.focus();
@@ -1675,6 +1920,7 @@ function render(){
   tpl.innerHTML = VIEWS[S.channel][S.step]();
   morphChildren(app, tpl.content);
   afterRender();
+  saveDraft(); syncHistory();
 }
 function rerenderKeepScroll(){
   const a=document.activeElement, id=a&&a.id;
@@ -1694,6 +1940,7 @@ function applyMask(el){
   if(!r || (r.digits && +r.digits > max)){
     const back = Math.max(0, (el.selectionStart ?? 0) - (el.value.length - prev.length));
     el.value = prev; el.setSelectionRange(back, back);
+    if(el.dataset.act==='emp-estimate' && !S.empOver){ S.empOver = true; rerenderKeepScroll(); }
     /* вспышка отказа — только у числовых полей (AmountInput, NumberInput); маски телефона и даты молча игнорируют лишнее */
     if(kind==='amount' || kind==='count') rejectInput(el);
     return null;
@@ -1719,20 +1966,40 @@ app.addEventListener('click', e=>{
     if(v==='checkout'){
       const block=detailsBlock();
       if(block){
-        live.textContent=block;
+        live.textContent=block; S.showErrorsDetails=true; rerenderKeepScroll();
         const staffTarget=S.staffEdit!==null ? '#st-fio' : S.staff.length ? '[data-act="staff-menu"]' : '[data-act="staff-add"]';
-        const target=S.sel.dms.on && !EMPN() ? staffTarget : `#addr-${S.addresses.findIndex(a=>!a.addr.trim())}`;
+        const noAddr=(S.sel.prop.on||S.sel.liability.on) && !S.addresses[0].addr.trim();
+        const target=S.sel.dms.on && !EMPN() ? staffTarget : noAddr ? '#addr-0' : '#pay-acc';
         app.querySelector(target)?.focus();
         return;
       }
+      /* Застрахованных меньше, чем указано на первом шаге, — спросить, а не менять цену молча */
+      if(S.sel.dms.on && S.estimateEmployees && EMPN() < S.estimateEmployees && S.mismatchOk!==EMPN()){ S.mismatch=true; rerenderKeepScroll(); return; }
     }
-    S.step = v; S.panel=null; if(v==='showcase'){S.agreed=false;S.signed=false;S.signing=false;S.signway='pep';} S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'});
+    S.step = v; S.panel=null; S.codeSession=false; S.agreeErr=false;
+    if(v==='showcase'){S.agreed=false;S.signed=false;S.signing=false;S.signway='pep'; dropDraft();}
+    S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'});
   }
-  else if(act==='back'){ const i=FLOW.indexOf(S.step); S.step=FLOW[Math.max(0,i-1)]; render(); }
+  else if(act==='back'){
+    S.codeSession=false; S.agreeErr=false;
+    /* Есть запись в истории — «Назад» в шапке и «назад» браузера ведут в одно место */
+    if(histIdx > 0 && typeof history!=='undefined'){ history.back(); return; }
+    const i=FLOW.indexOf(S.step); S.step=FLOW[Math.max(0,i-1)]; render();
+  }
+  else if(act==='mismatch-ok'){ S.mismatchOk=EMPN(); S.mismatch=false; S.step='checkout'; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  else if(act==='mismatch-add'){ S.mismatch=false; lastLayer=null; rerenderKeepScroll(); app.querySelector('[data-act="staff-add"]')?.focus(); }
+  else if(act==='mismatch-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.mismatch=false; rerenderKeepScroll(); }
+  else if(act==='manager-request'){ S.managerReq=true; rerenderKeepScroll(); }
+  else if(act==='manager-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.managerReq=false; rerenderKeepScroll(); }
+  else if(act==='terms-explain'){ S.explain=v; rerenderKeepScroll(); }
+  else if(act==='explain-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.explain=null; rerenderKeepScroll(); }
+  else if(act==='doc'){ S.panel='doc:'+v; rerenderKeepScroll(); }
+  else if(act==='kit-download'){ showToast('В прототипе комплект не формируется'); rerenderKeepScroll(); }
+  else if(act==='draft-resume'){ const d=loadDraft(); if(d){ Object.assign(S, d); S.panel=null; S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'}); } }
   else if(act==='section'){ toggleSection(v); rerenderKeepScroll(); }
   else if(act==='module-open'){ S.expandedModule=S.expandedModule===v?null:v; rerenderKeepScroll(); }
   else if(act==='single'){ SCHEMA.sections.forEach(s=>{ S.sel[s.id].on = s.id===v; }); S.flow='single'; S.singleModule=v; S.expandedModule=v; S.panel=null; S.warn=null; S.step='config'; render(); window.scrollTo({top:0,behavior:'smooth'}); }
-  else if(act==='package-open'){ S.flow='package'; S.singleModule=null; S.expandedModule=null; S.step='config'; S.panel=null; S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  else if(act==='package-open'){ if(S.flow==='single') applyPreset('reco'); S.flow='package'; S.singleModule=null; S.expandedModule=null; S.step='config'; S.panel=null; S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'}); }
   else if(act==='panel'){ S.panel = v; S.warn=null; rerenderKeepScroll(); }
   else if(act==='terms'){ S.panel = 'terms'; S.warn=null; rerenderKeepScroll(); }
   else if(act==='channel'){
@@ -1748,35 +2015,50 @@ app.addEventListener('click', e=>{
   }
   else if(act==='preset'){ applyPreset(v); rerenderKeepScroll(); }
   else if(act==='emp-step'){
-    S.estimateEmployees=Math.max(0,Math.min(SCHEMA.rules.maxEmployees,S.estimateEmployees+Number(v)));
+    const max=SCHEMA.rules.maxEmployees, next=S.estimateEmployees+Number(v);
+    S.empOver = next > max;
+    S.estimateEmployees=Math.max(0,Math.min(max,next));
     rerenderKeepScroll();
   }
-  else if(act==='staff-add'){ S.staffEdit='new'; S.staffDraft={fio:'',dob:'',phone:'',email:''}; S.staffErr=null; rerenderKeepScroll(); }
+  else if(act==='staff-add'){ S.staffEdit='new'; S.staffDraft=S.staffPending || {fio:'',dob:'',phone:'',email:''}; S.staffPending=null; S.staffErr=null; rerenderKeepScroll(); }
   else if(act==='staff-menu'){ S.staffMenu = S.staffMenu===+v ? null : +v; rerenderKeepScroll(); }
   else if(act==='staff-edit'){ S.staffMenu=null; S.staffEdit=+v; S.staffDraft={...S.staff[+v]}; S.staffErr=null; rerenderKeepScroll(); }
-  else if(act==='staff-cancel'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.staffEdit=null; S.staffDraft=null; S.staffErr=null; rerenderKeepScroll(); }
+  else if(act==='staff-cancel'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; keepStaffDraft(); S.staffEdit=null; S.staffDraft=null; S.staffErr=null; rerenderKeepScroll(); }
+  else if(act==='staff-discard'){ S.staffPending=null; S.staffEdit=null; S.staffDraft=null; S.staffErr=null; rerenderKeepScroll(); }
   else if(act==='toast-close'){ S.toast=null; rerenderKeepScroll(); }
-  else if(act==='staff-save'){
+  else if(act==='staff-save' || act==='staff-save-more'){
     const d = S.staffDraft;
+    d.fio = normFio(d.fio);
     S.staffErr = staffErrors(d);
+    const dup = !S.staffErr.fio && S.staff.some((p,i)=>i!==S.staffEdit && p.fio.toLowerCase()===d.fio.toLowerCase() && (!d.dob.trim() || !p.dob || p.dob===d.dob.trim()));
+    if(dup) S.staffErr.fio = 'Этот сотрудник уже в списке';
     if(Object.keys(S.staffErr).length){ rerenderKeepScroll(); const f=app.querySelector('[aria-invalid="true"]'); if(f) f.focus(); return; }
     if(d.phone.trim()) d.phone = fmtPhone(d.phone);
-    d.fio = d.fio.trim().replace(/\s+/g,' '); d.email = d.email.trim(); d.dob = d.dob.trim();
+    d.email = d.email.trim(); d.dob = d.dob.trim();
     S.staffErr = null;
     const isNew = S.staffEdit==='new';
     if(isNew) S.staff.push({...d, on:true});
     else S.staff[S.staffEdit] = {...S.staff[S.staffEdit], ...d, on:true};
-    S.staffEdit=null; S.staffDraft=null; showToast(isNew?'Сотрудник добавлен':'Данные сотрудника сохранены'); rerenderKeepScroll();
+    /* Тост по исходу: застрахован ли сотрудник на самом деле */
+    showToast(staffFull(d) ? (isNew ? 'Сотрудник добавлен в страховку' : 'Данные сотрудника сохранены') : `Сохранили. Чтобы застраховать, добавьте ${staffMiss(d).join(', ')}`);
+    if(act==='staff-save-more' && S.staff.length < SCHEMA.rules.maxEmployees){
+      S.staffEdit='new'; S.staffDraft={fio:'',dob:'',phone:'',email:''}; rerenderKeepScroll(); app.querySelector('#st-fio')?.focus();
+    } else { S.staffEdit=null; S.staffDraft=null; rerenderKeepScroll(); }
   }
-  else if(act==='staff-del'){ S.staffMenu=null; S.staff.splice(+v,1); if(S.staffEdit===+v){S.staffEdit=null;S.staffDraft=null;} rerenderKeepScroll(); app.querySelector('[data-act="staff-add"]')?.focus(); }
-  else if(act==='signway'){ S.signway = v; rerenderKeepScroll(); }
+  else if(act==='staff-del'){ S.staffMenu=null; S.staffDelete=+v; rerenderKeepScroll(); }
+  else if(act==='staff-del-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.staffDelete=null; rerenderKeepScroll(); }
+  else if(act==='staff-del-ok'){
+    const i=S.staffDelete; S.staffDelete=null; S.staff.splice(i,1); if(S.staffEdit===i){S.staffEdit=null;S.staffDraft=null;}
+    showToast('Сотрудник удалён'); lastLayer=null; rerenderKeepScroll(); app.querySelector('[data-act="staff-add"]')?.focus();
+  }
+  else if(act==='signway'){ S.signway = t.value || v; rerenderKeepScroll(); }
   else if(act==='consent'){ S.consent = true; rerenderKeepScroll(); }
   else if(act==='consent-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.consent = false; rerenderKeepScroll(); }
   else if(act==='code-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.signing = false; clearInterval(codeTimer); rerenderKeepScroll(); }
-  else if(act==='agree'){ S.agreed = !S.agreed; rerenderKeepScroll(); }
+  else if(act==='agree'){ S.agreed = !S.agreed; S.agreeErr=false; rerenderKeepScroll(); }
   else if(act==='start-sign'){
     if(!S.agreed){
-      live.textContent='Подтвердите согласие перед продолжением';
+      S.agreeErr=true; rerenderKeepScroll();
       app.querySelector('[data-act="agree"]')?.focus();
       return;
     }
@@ -1784,10 +2066,10 @@ app.addEventListener('click', e=>{
     if(S.payMailError){ rerenderKeepScroll(); app.querySelector('#pay-mail')?.focus(); return; }
     if(S.channel==='sfa' && S.signway==='paper'){
       setTimeout(()=>{S.step='done';S.signing=false;render();window.scrollTo({top:0,behavior:'smooth'});},700);
-    } else { S.signing=true; S.codeHelp=false; startCode(); rerenderKeepScroll(); }
+    } else { S.signing=true; S.codeHelp=false; startCode(!S.codeSession); rerenderKeepScroll(); }
   }
   else if(act==='sign'){ signCode(); }
-  else if(act==='code-resend'){ startCode(); rerenderKeepScroll(); const f=app.querySelector('#code-in'); if(f) f.focus(); }
+  else if(act==='code-resend'){ startCode(true); rerenderKeepScroll(); const f=app.querySelector('#code-in'); if(f) f.focus(); }
   else if(act==='code-help'){ S.codeHelp=!S.codeHelp; rerenderKeepScroll(); }
 });
 app.addEventListener('input', e=>{
@@ -1803,7 +2085,7 @@ app.addEventListener('input', e=>{
   }
   const estimate=e.target.closest('[data-act="emp-estimate"]');
   if(estimate){
-    S.estimateEmployees=+r.digits || 0;
+    S.estimateEmployees=+r.digits || 0; S.empOver=false;
     rerenderKeepScroll();
     return;
   }
@@ -1862,6 +2144,8 @@ app.addEventListener('change', e=>{
     S.warn=null; rerenderKeepScroll(); return;
   }
   if(t.dataset.act==='pay-acc'){ S.payAccount = +t.value; rerenderKeepScroll(); return; }
+  if(t.dataset.act==='signway'){ S.signway = t.value; rerenderKeepScroll(); return; }
+  if(t.dataset.act==='dms-program'){ S.sel.dms.program = t.value; rerenderKeepScroll(); return; }
 
 });
 /* Esc закрывает верхний слой: диалог подтверждения → боковая панель раздела */
@@ -1894,6 +2178,9 @@ app.addEventListener('focusin', e=>{
 });
 /* Ведущие нули убираются при уходе из поля, как в AmountInput: значение берётся из состояния */
 app.addEventListener('focusout', e=>{
+  if(e.target.dataset?.act==='staff-f' && e.target.dataset.v==='fio' && S.staffDraft){
+    const v = normFio(e.target.value); if(v!==e.target.value){ e.target.value = v; S.staffDraft.fio = v; }
+  }
   const m = e.target.dataset?.mask;
   if(m==='amount' || m==='count') setTimeout(rerenderKeepScroll);
 });
@@ -1902,14 +2189,26 @@ document.addEventListener('keydown', e=>{
   if(e.key !== 'Escape') return;
   if(S.staffMenu!=null){ const i=S.staffMenu; S.staffMenu=null; rerenderKeepScroll(); app.querySelector(`[data-act="staff-menu"][data-v="${i}"]`)?.focus(); return; }
   if(S.consent){ S.consent = false; rerenderKeepScroll(); return; }
-  if(S.staffEdit!==null){ S.staffEdit=null; S.staffDraft=null; S.staffErr=null; rerenderKeepScroll(); return; }
+  if(S.mismatch || S.managerReq || S.explain || S.staffDelete!=null){ Object.assign(S, {mismatch:false, managerReq:false, explain:null, staffDelete:null}); rerenderKeepScroll(); return; }
+  if(S.staffEdit!==null){ keepStaffDraft(); S.staffEdit=null; S.staffDraft=null; S.staffErr=null; rerenderKeepScroll(); return; }
   if(S.signing && !S.signed){ S.signing = false; clearInterval(codeTimer); rerenderKeepScroll(); return; }
   if(S.panel){ S.panel = null; S.warn = null; rerenderKeepScroll(); }
 });
-document.documentElement.lang = "ru";
+/* Закрытая крестиком или Esc форма нового сотрудника не теряет введённое */
+function keepStaffDraft(){
+  if(S.staffEdit==='new' && S.staffDraft && Object.values(S.staffDraft).some(x=>String(x).trim())) S.staffPending = {...S.staffDraft};
+}
+if(typeof window!=='undefined' && window.addEventListener) window.addEventListener('popstate', e=>{
+  const step = e.state?.step;
+  histIdx = e.state?.i || 0;
+  closeLayers();
+  S.step = FLOW.includes(step) ? step : 'showcase';
+  render(); window.scrollTo(0,0);
+});
+{ const d = loadDraft(); if(d){ Object.assign(S, d); showToast('Восстановили оформление'); } }
 render();
+document.documentElement.lang = "ru";
 </script>
-
 
 
 </body>

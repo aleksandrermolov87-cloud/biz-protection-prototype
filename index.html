@@ -748,18 +748,19 @@ label.tag{cursor:pointer;position:relative}
    Тарифы, суммы и правила — из таблицы «Комплексная защита бизнеса —
    параметры и калькулятор (2)», лист «Параметры». Тарифы брутто:
    премия = ROUND(СС × тариф × коэффициент) по каждому объекту, тариф
-   единый на любую сумму. Статуса «собственник / арендатор» в таблице больше
-   нет: помещение — с конструктивом. ДМС — одна программа «Классика». */
+   единый на любую сумму. Решения владельца от 10.11.2026: только
+   собственники помещения (ИП/юрлица); ДМС 18–65 лет; одна «Классика». */
 const SCHEMA = {
   title:'Комплексная защита бизнеса',
-  rules:{minModules:1, maxModules:3, maxEmployees:10, minPremium:12000},
+  version:'2026-11-10-v1',
+  rules:{minModules:1, maxModules:3, maxEmployees:10, minPremium:12000, minAge:18, maxAge:65, termYears:1},
   sections:[
-    {id:'prop', name:'Защита имущества', short:'Помещение в собственности компании. Оборудование и товар можно добавить по выбору', per:'object', kv:.5,
-     about:'Можно застраховать помещение в собственности компании: конструкции здания, внутреннюю отделку и инженерное оборудование. Оборудование, мебель, технику и товарные запасы можно добавить по выбору. Для каждого объекта вы указываете отдельную страховую сумму — сумму, в пределах которой возможна выплата.',
+    {id:'prop', name:'Защита имущества', short:'Только собственникам помещения — ИП и организациям. Оборудование и товар можно добавить', per:'object', kv:.5,
+     about:'Можно застраховать помещение, принадлежащее страхователю — ИП или юридическому лицу: конструкции здания, внутреннюю отделку и инженерное оборудование. Оборудование, мебель, технику и товарные запасы можно добавить по выбору. Для каждого объекта вы указываете отдельную страховую сумму — сумму, в пределах которой возможна выплата. Если помещение арендуется, модуль защиты имущества в этом продукте недоступен.',
      base:['Пожар, взрыв, удар молнии','Залив, прорыв труб, авария отопления','Кража со взломом, грабёж, вандализм','Ураган, град, паводок','Бой витрин и стёкол','Падение деревьев, наезд транспорта, падение летательных аппаратов и беспилотников'],
      objects:[
        {id:'build', name:'Помещение', required:true, min:1000000, max:10000000,
-        what:'Только в собственности компании. Конструктив, внутренняя отделка и инженерное оборудование', bands:[[1000000,.001]]},
+        what:'В собственности страхователя — ИП или юрлица. Конструктив, внутренняя отделка и инженерное оборудование', bands:[[1000000,.001]]},
        {id:'equip', name:'Оборудование, мебель, техника', min:1000000, max:5000000, bands:[[1000000,.001]]},
        {id:'stock', name:'Товарные запасы', min:1000000, max:5000000, bands:[[1000000,.001]]}],
      options:[
@@ -771,13 +772,13 @@ const SCHEMA = {
               ['Без учёта износа','Из выплаты не вычитаем износ отделки, оборудования и товара'],
               ['С восстановлением страховой суммы','После выплаты сумма защиты снова полная до конца срока']]}]},
     {id:'dms', name:'ДМС для сотрудников', short:'Очные приёмы врачей без ограничения числа посещений. Обследования — по назначению врача', per:'employee', fixed:true,
-     about:'ДМС — добровольное медицинское страхование. В программу «Классика» входят очные приёмы врачей без ограничения числа посещений и обследования по назначению врача. Можно включить от 1 до 10 сотрудников. Программа одна для всех, стоимость — 35 000 ₽ в год за каждого сотрудника. Стоматология подключается отдельно.',
+     about:'ДМС — добровольное медицинское страхование. В программу «Классика» входят очные приёмы врачей без ограничения числа посещений и обследования по назначению врача. Можно включить от 1 до 10 сотрудников от 18 до 65 лет включительно. Программа одна для всех, стоимость — 35 000 ₽ в год за каждого сотрудника. Стоматология подключается отдельно.',
      base:['Безлимитные очные приёмы врачей','Исследования по назначению врача'],
      /* В таблице одна программа — «Классика», базовая убрана; КВ 15% */
      programs:[
        {id:'classic', name:'Классика', desc:'Безлимитные очные приёмы врачей и исследования по назначению', price:35000, kv:.15}],
      options:[
-       {id:'dental', name:'Стоматология', desc:'Без лимита', perEmp:12000}]},
+       {id:'dental', name:'Стоматология', desc:'Стоматологическая помощь по программе ДМС без ограничения числа посещений', perEmp:12000}]},
     {id:'liability', name:'Гражданская ответственность', short:'Возмещение вреда людям и ущерба чужому имуществу, причинённых деятельностью бизнеса', per:'limit', kv:.5,
      needs:['prop','dms'],
      about:'Страхование на случай, если деятельность бизнеса причинит вред жизни или здоровью посетителей либо ущерб имуществу посетителей, соседей или арендодателя. Например, из-за аварии в вашем помещении пострадает имущество соседей. Оформляется только вместе с защитой имущества или ДМС. Выплата зависит от обстоятельств и условий страхования.',
@@ -785,7 +786,7 @@ const SCHEMA = {
      min:3000000, max:10000000,
      bands:[[3000000,.001]],
      options:[
-       {id:'quality', name:'Ответственность за качество товаров, работ и услуг', desc:'Претензии к качеству товара — до 25% выбранного лимита ответственности. Эта сумма входит в общий лимит и не увеличивает его', sublimit:.25, rate:.001}]}
+       {id:'quality', name:'Вред из-за недостатков товаров, работ или услуг', desc:'Возмещение вреда жизни, здоровью или имуществу третьих лиц из-за недостатков товаров, работ или услуг. До 25% выбранного лимита: эта сумма входит в общий лимит и не увеличивает его', sublimit:.25, rate:.001}]}
   ],
   presets:[
     {id:'base', name:'Базовый',
@@ -795,7 +796,7 @@ const SCHEMA = {
     {id:'max',  name:'Максимальный',
      sel:{prop:{on:true,sums:{build:10000000,equip:5000000,stock:5000000},opts:['ext']}, dms:{on:true,program:'classic',opts:['dental']}, liability:{on:true,limit:10000000,opts:['quality']}}}
   ],
-  docs:[['Условия страхования «Комплексная защита бизнеса»','PDF · 60 стр.'],['Образец полиса','PDF · 4 стр.'],['Памятка: как получить выплату','PDF · 2 стр.']]
+  docs:[['Полис','Макет']]
 };
 
 /* Только то, что у банка действительно есть без ручного ввода клиента:
@@ -818,7 +819,9 @@ const VALID = {
     return w.length <= 5 && w.every(x=>FIO_WORD.test(x)) ? '' : 'Только буквы, дефис и апостроф'; },
   dob: v => { const m=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v.trim()); if(!m) return 'Дата в формате ДД.ММ.ГГГГ';
     const d=new Date(+m[3],m[2]-1,+m[1]); if(d.getDate()!==+m[1]||d.getMonth()!==m[2]-1) return 'Такой даты нет';
-    const age=(Date.now()-d)/31557600000; return age<14||age>100 ? 'Сотруднику должно быть от 14 до 100 лет' : ''; },
+    const today=new Date();
+    const age=today.getFullYear()-d.getFullYear()-((today.getMonth()<d.getMonth() || (today.getMonth()===d.getMonth() && today.getDate()<d.getDate()))?1:0);
+    return age<SCHEMA.rules.minAge||age>SCHEMA.rules.maxAge ? 'Сотруднику должно быть от 18 до 65 лет включительно' : ''; },
   phone: v => { const x=v.replace(/\D/g,''); return /^[78]?9\d{9}$/.test(x) ? '' : 'Нужен российский мобильный: +7 и 10 цифр'; },
   email: v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? '' : 'Почта в формате ivanova@mail.ru',
 };
@@ -859,13 +862,13 @@ const COVERAGE_COPY = {
       'Повреждение имущества при урагане, граде или паводке',
       'Бой застрахованных витрин и стёкол',
       'Повреждение имущества при падении деревьев, наезде транспорта, падении летательных аппаратов или беспилотников'],
-    note:'Помещение должно быть в собственности компании. Оборудование и товар включаются по вашему выбору.'},
+    note:'Только для собственников помещения — ИП и юридических лиц. Для арендуемого помещения модуль недоступен. Оборудование и товар добавляются по выбору.'},
   dms:{title:'Какая медицинская помощь входит в ДМС',
     intro:'Сотрудникам, включённым в программу «Классика», доступны:',
     items:[
       'Очные приёмы врачей по программе ДМС без ограничения числа посещений',
       'Обследования по назначению врача в рамках программы ДМС'],
-    note:'Стоматология подключается отдельно за 12 000 ₽ в год за каждого сотрудника.'},
+    note:'Для сотрудников от 18 до 65 лет включительно. Стоматология — ещё 12 000 ₽ в год за каждого, без ограничения числа посещений по программе. Перечень услуг определяется программой ДМС.'},
   liability:{title:'Что покрывает страхование ответственности',
     intro:'Если деятельность бизнеса причинила вред, страховка предусматривает возмещение:',
     items:[
@@ -888,7 +891,7 @@ const START = {
   sel:structuredClone(SCHEMA.presets.find(p=>p.id==='reco').sel),
   staff:[], staffEdit:null, staffDraft:null,
   estimateEmployees:0,
-  addresses:[{addr:''}],
+  addresses:[{addr:''}], propertyOwnership:'', productVersion:SCHEMA.version,
   payAccount:0, payMail:'office@prodmarket.ru', payMailError:null,
   agreed:false, agreedFor:null, completedKey:null, signed:false, signway:'pep', consent:false, warn:null,
   code:'', codeArr:[], codeLeft:0, codeTries:3, codeWrong:false, codeHelp:false, codeSentAt:0, codeSession:false,
@@ -1192,6 +1195,11 @@ function elSections(){
 }
 function elWarn(){ return S.warn && !S.panel ? `<div class="note" role="status"><span>${S.warn}</span></div>` : ''; }
 /* Адрес страхуемого помещения: в таблице расчёт ведётся на один объект */
+function elPropertyOwnership(){
+  const err=S.showErrors && S.propertyOwnership!=='owned' ? (S.propertyOwnership==='rented'?'Для арендуемого помещения защита имущества недоступна':'Укажите, находится ли помещение в собственности страхователя') : '';
+  return elRadioTags('property-ownership','Кому принадлежит помещение?',[{id:'owned',name:'Страхователю'},{id:'rented',name:'Арендуется'}],S.propertyOwnership,'Собственником должен быть страхователь — ИП или юридическое лицо',err)
+    +(S.propertyOwnership==='rented'?`<div class="grp"><p class="t-md" role="status">Если помещение арендуется, застраховать его, оборудование и товар в этом продукте нельзя. Можно продолжить с ДМС и ответственностью.</p><div><button type="button" class="btn btn--48 btn--secondary" data-act="remove-property">Убрать защиту имущества</button></div></div>`:'');
+}
 function elParams(){
   const a = S.addresses[0], err = (S.touched['addr-0'] || (S.step==='config' ? S.showErrors : S.showErrorsDetails)) && !a.addr.trim();
   return `<div class="fields"><div><div class="field${err?' field--err':''}"><label for="addr-0">Адрес помещения</label><input id="addr-0" data-act="addr" data-v="0" value="${esc(a.addr)}" placeholder="Город, улица, дом" autocomplete="street-address" aria-required="true" aria-describedby="${err?'addr-0-err':'addr-0-hint'}" ${err?'aria-invalid="true"':''}></div>
@@ -1233,7 +1241,7 @@ function elStaffForm(){
     <div class="dlg__body"><div class="fields">
       ${elStaffField('fio','ФИО','Иванова Мария Викторовна','autocomplete="off"')}
       <div class="frow">
-        ${elStaffField('dob','Дата рождения','ДД.ММ.ГГГГ','data-mask="date" inputmode="numeric" autocomplete="off"', SVG_CAL)}
+        ${elStaffField('dob','Дата рождения','ДД.ММ.ГГГГ','data-mask="date" inputmode="numeric" autocomplete="off"', SVG_CAL, 'От 18 до 65 лет включительно')}
         ${elStaffField('phone','Телефон','+7 000 000 00 00','data-mask="phone" type="tel" inputmode="tel" autocomplete="off"')}
       </div>
       ${elStaffField('email','Email','ivanova@mail.ru','type="email" inputmode="email" autocomplete="off"')}
@@ -1309,13 +1317,13 @@ function elPkgSummary(){
     <div class="cell"><div class="cell__main"><div class="cell__t">Итого в год</div></div><div class="cell__r"><b class="strong">${RUB(c.premium)}</b></div></div>
   </div>`;
 }
-const DOCS = () => [['policy','Полис','PDF · 4 стр.']];
+const DOCS = () => [['policy','Полис','Макет']];
 function elDocs(){
   return `<ul class="docs">${DOCS().map(([id,d,m])=>`<li><button type="button" class="docs__row" data-act="doc" data-v="${id}"><span class="docs__ico" aria-hidden="true">${SVG_DOC}</span><span class="docs__name">${d}</span><span class="docs__meta">${m}</span><span class="docs__dl" aria-hidden="true">${SVG_CHEV}</span></button></li>`).join('')}</ul>`;
 }
 /* Документ — в той же боковой панели 600, что «Условия страхования». Тексты демо, их даст страховщик */
 function elDocPanel(id){
-  return spShell('Полис',elPolicy(),`<button type="button" class="btn btn--48 btn--secondary" data-act="panel-close">Закрыть</button>`);
+  return spShell('Полис — макет',elPolicy(),`<button type="button" class="btn btn--48 btn--secondary" data-act="panel-close">Закрыть</button>`);
 }
 /* Что будет после оформления — на экране результата */
 function elAfter(){
@@ -1327,7 +1335,8 @@ function elAfter(){
 function elPolicy(){
   const c = calc();
   return `<div class="policy">
-    <div class="policy__hd"><div class="t-h3">${SCHEMA.title}</div><div class="t-sm sec">Образец расчёта для ${CLIENT.name} · не является действующим полисом</div></div>
+    <div class="policy__hd"><div class="t-h3">${SCHEMA.title}</div><div class="t-sm sec">Заглушка единого полиса для ${CLIENT.name}. Не является действующим полисом</div></div>
+    <p class="t-sm sec">Начало защиты — дата подтверждённой оплаты. В макете нет номера договора и действующей страховой защиты.</p>
     <div>${c.rows.map(r=>{const s=sec(r.id);
       const what = coverageItems(s).join('; ');
       const add = r.opts.map(o=>`${o.name}: ${RUB(optPrice(s.id,o.id))} в год`).join('; ');
@@ -1343,9 +1352,9 @@ function elPolicy(){
 function elCheckoutBlocks(){
   const c = calc(), sfa = S.channel==='sfa', paper = sfa && S.signway==='paper';
   /* Виды защиты, суммы, лимиты и стоимость — один раз, в «Составе»; здесь только условия договора */
-  const rows = [['Срок действия','1 год с даты оплаты'],
+  const rows = [['Начало защиты','Дата подтверждённой оплаты'],['Срок действия','1 год с даты оплаты'],
     ...(S.sel.prop.on || S.sel.liability.on ? [['Адрес помещения', esc(S.addresses[0].addr)]] : []),
-    ['Списание', paper ? `Со счёта ${ACC()} после подписания согласия, разово за год` : `Со счёта ${ACC()} в день подписания согласия, разово за год`],
+    ['Списание', paper ? `Со счёта ${ACC()} после подписания согласия, разово за год` : `Со счёта ${ACC()} после подписания согласия, разово за год`],
     ['Согласие подписывает', paper ? 'Клиент, подпись на бумаге' : `${sfa ? 'Клиент' : SIGNER.name} · подтверждение кодом`]];
   return `<section class="block"><h2 class="t-h3">${S.flow==='package' ? 'Состав пакета' : 'Стоимость'}</h2>${elPkgSummary()}</section>
     <section class="block"><h2 class="t-h3">Условия договора</h2>
@@ -1453,7 +1462,7 @@ function elConsentDialog(){
   return `<div class="dlg__scrim" data-act="consent-close"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cns-t">
     <div class="dlg__hd"><h3 id="cns-t" tabindex="-1">Согласие на поручения</h3>
       <button type="button" class="dlg__x" data-act="consent-close" aria-label="Закрыть">${SVG_X}</button></div>
-    <div class="dlg__body"><p class="t-md">В прототипе показано подписание согласия на поручения по оформлению страховки. Окончательный текст согласия предоставит банк. Стоимость выбранной страховки: ${RUB(calc().premium)} за год, счёт ${ACC()}.</p></div>
+    <div class="dlg__body"><p class="t-md">В прототипе показано подписание согласия на поручения по оформлению страховки. Это мокап документа; юридический текст будет добавлен позже. Стоимость выбранной страховки: ${RUB(calc().premium)} за год, счёт ${ACC()}.</p></div>
     <div class="dlg__ft"><button type="button" class="btn btn--48 ${PRI()}" data-act="consent-close">Понятно</button></div>
   </div></div>`;
 }
@@ -1532,7 +1541,7 @@ function elEmployeeEstimate(){
         <button type="button" data-act="emp-step" data-v="-1" aria-label="Уменьшить число сотрудников" ${n===0?'disabled':''}>${SVG_MINUS}</button><i aria-hidden="true"></i>
         <button type="button" data-act="emp-step" data-v="1" aria-label="Увеличить число сотрудников">${SVG_PLUS24}</button></span></span></div>
     ${over ? `<p class="field__err" id="estimate-err">В пакете до ${max} сотрудников</p>`
-      : `<p class="field__sub" id="estimate-hint">До ${max} сотрудников. На следующем шаге понадобятся ФИО, дата рождения, телефон и email каждого</p>`}</div>
+      : `<p class="field__sub" id="estimate-hint">От 18 до 65 лет включительно, до ${max} сотрудников. На следующем шаге понадобятся ФИО, дата рождения, телефон и email каждого</p>`}</div>
     ${over ? elLimitRoute(`Для компании больше ${max} человек оформим защиту через менеджера`) : ''}</div>`;
 }
 /* Поле суммы: вводится руками, сохраняются только границы диапазона (как в таблице) */
@@ -1587,6 +1596,8 @@ function elModuleControls(s, place='inline'){
   return `<div class="module-controls">
     ${disabled?'<p class="t-sm sec">Включите, чтобы настроить</p>':''}
     <fieldset ${disabled?'disabled':''} aria-label="Условия: ${s.name}">
+      ${s.id==='prop'?elPropertyOwnership():''}
+      ${s.id==='prop' && S.propertyOwnership!=='owned' ? '' : `
       ${s.id==='prop'?elParams():''}
       ${elSumControls(s)}
       ${s.options.length?`<div class="grp"><h4 class="grp__t">Дополнительные опции</h4><div class="opts">${s.options.map(o=>{
@@ -1597,6 +1608,7 @@ function elModuleControls(s, place='inline'){
           <span class="opt__r">${(([sum,unit])=>`+ ${sum}<small>${unit}</small>`)(optCost(s.id,o))}</span>
         </label>`;
       }).join('')}</div>${s.options.filter(o=>o.terms).map(o=>`<div><button type="button" class="lnk lnk--pseudo t-sm" data-act="terms-explain" data-v="${s.id}:${o.id}">Что значит «${o.name}»</button></div>`).join('')}</div>`:''}
+      `}
     </fieldset>
     <details class="module-coverage"><summary>${COVERAGE_COPY[s.id].title}</summary>${elCoverage(s)}</details>
   </div>`;
@@ -1674,6 +1686,7 @@ function configCheck(){
   const sums = sel.prop.sums, emp = quoteEmployees();
   if(sel.liability.on && !liabilityAllowed()) return ['liability','Гражданскую ответственность нельзя оформить отдельно: добавьте имущество или ДМС'];
   if(n < R.minModules || n > R.maxModules) return [null,`Выберите от ${R.minModules} до ${R.maxModules} видов защиты`];
+  if(sel.prop.on && S.propertyOwnership!=='owned') return ['prop',S.propertyOwnership==='rented'?'Для арендуемого помещения защита имущества недоступна: уберите этот модуль':'Укажите, находится ли помещение в собственности страхователя'];
   if(sel.prop.on && !S.addresses[0].addr.trim()) return ['prop','Укажите адрес помещения для защиты имущества'];
   const obj = id => p.objects.find(o=>o.id===id);
   if(sel.prop.on && !+sums.build) return ['prop','Имущество: укажите страховую сумму по помещению'];
@@ -1729,7 +1742,7 @@ function detailsBar(){ return flowBar('checkout',detailsBlock()); }
 const prodTitle = () => S.flow==='single' && S.singleModule ? sec(S.singleModule).name : SCHEMA.title;
 
 /* Согласие относится к конкретному составу, данным и способу оформления. */
-const quoteKey = () => JSON.stringify({sel:S.sel,staff:S.staff,addresses:S.addresses,
+const quoteKey = () => JSON.stringify({version:SCHEMA.version,ownership:S.propertyOwnership,sel:S.sel,staff:S.staff,addresses:S.addresses,
   estimate:S.estimateEmployees,account:S.payAccount,email:S.payMail.trim(),
   channel:S.channel,signway:S.signway,premium:calc().premium});
 let completionSerial=0;
@@ -1776,7 +1789,7 @@ function quoteRail(){
   return `<aside class="isle quote-rail"><h3 class="t-h4">Стоимость полиса</h3>${c.rows.map(r=>`<div><span>${sec(r.id).name}</span><b>${RUB(r.premium)}</b></div>`).join('')}${c.topup?`<div><span>Доплата до минимальной стоимости</span><b>${RUB(c.topup)}</b></div>`:''}<div><span>Сумма за год</span><strong>${pending?'от ':''}${RUB(c.premium)}</strong></div></aside>`;
 }
 function packageCards(){
- const descriptions={prop:'Выплата при повреждении помещения, оборудования или товара, например из-за пожара или залива. Помещение — только в собственности компании.',liability:'Возмещение вреда посетителям и ущерба имуществу посетителей, соседей или арендодателя. Только вместе с имуществом или ДМС.',dms:sec('dms').short};
+ const descriptions={prop:'Выплата при повреждении помещения, оборудования или товара, например из-за пожара или залива. Только для собственников помещения — ИП и юридических лиц. При аренде модуль недоступен.',liability:'Возмещение вреда посетителям и ущерба имуществу посетителей, соседей или арендодателя. Только вместе с имуществом или ДМС.',dms:sec('dms').short};
  return `<section class="sect"><h2 class="t-h2">Выберите виды защиты</h2><div class="coverage-grid">${['prop','liability','dms'].map(id=>`<article class="coverage-card"><h3 class="t-h3">${sec(id).name}</h3><p>${descriptions[id]}</p><button class="btn btn--48 btn--secondary" data-act="panel" data-v="${id}">Подробнее</button>${figmaImage(id==='prop'?'property':'shield')}</article>`).join('')}</div></section>`;
 }
 function packageSupport(){
@@ -1957,12 +1970,14 @@ function sfaDone(){
    Оформление переживает перезагрузку и «назад» браузера. Только вкладка
    (sessionStorage); согласие и подпись после восстановления даются заново. */
 const DRAFT_KEY = 'alfa360-draft';
-const DRAFT_FIELDS = ['channel','step','flow','singleModule','sel','staff','estimateEmployees','staffPending','addresses','payAccount','payMail','signway'];
+const DRAFT_FIELDS = ['channel','step','flow','singleModule','sel','staff','estimateEmployees','staffPending','addresses','propertyOwnership','productVersion','payAccount','payMail','signway'];
 const store = () => { try { return typeof sessionStorage!=='undefined' ? sessionStorage : null; } catch { return null; } };
 function loadDraft(){
   try {
     const d=JSON.parse(store()?.getItem(DRAFT_KEY) || 'null');
     if(!d || !['config','details','checkout'].includes(d.step)) return null;
+    if(d.productVersion!==SCHEMA.version){d.productVersion=SCHEMA.version;d.step='config';d.warn='Условия продукта обновились. Проверьте состав и новую стоимость до продолжения';}
+    if(d.sel?.prop?.on && d.propertyOwnership!=='owned'){d.step='config';d.expandedModule='prop';}
     // Старый черновик мог остановиться до ввода адреса на прежнем втором шаге.
     if(d.sel?.prop?.on && !d.addresses?.[0]?.addr?.trim()){d.step='config';d.expandedModule='prop';}
     return d;
@@ -1972,6 +1987,7 @@ function saveDraft(){
   try {
     if(S.step==='done') { store()?.removeItem(DRAFT_KEY); return; }
     if(!['config','details','checkout'].includes(S.step)) return;
+    S.productVersion=SCHEMA.version;
     store()?.setItem(DRAFT_KEY, JSON.stringify(Object.fromEntries(DRAFT_FIELDS.map(k=>[k,k==='staffPending'&&S.staffEdit==='new'?S.staffDraft:S[k]]))));
   } catch {}
 }
@@ -2154,6 +2170,7 @@ app.addEventListener('click', e=>{
   else if(act==='explain-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.explain=null; rerenderKeepScroll(); }
   else if(act==='doc'){ S.panel='doc:'+v; rerenderKeepScroll(); }
   else if(act==='draft-resume'){ const d=loadDraft(); if(d){ Object.assign(S, d); S.panel=null; S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'}); } }
+  else if(act==='remove-property'){ S.sel.prop.on=false;S.expandedModule=S.sel.dms.on?'dms':S.sel.liability.on?'liability':null;S.warn='Защита имущества убрана. Проверьте оставшийся состав и стоимость';invalidateApproval();rerenderKeepScroll(); }
   else if(act==='section'){ toggleSection(v); rerenderKeepScroll(); }
   else if(act==='module-open'){ S.expandedModule=S.expandedModule===v?null:v; rerenderKeepScroll(); }
   else if(act==='single'){
@@ -2319,6 +2336,7 @@ app.addEventListener('change', e=>{
     S.sel[sid].opts=t.checked?[...S.sel[sid].opts.filter(x=>x!==oid),oid]:S.sel[sid].opts.filter(x=>x!==oid);
     S.warn=null; rerenderKeepScroll(); return;
   }
+  if(t.dataset.act==='property-ownership'){ S.propertyOwnership=t.value;invalidateApproval();S.warn=null;rerenderKeepScroll();return; }
   if(t.dataset.act==='pay-acc'){ S.payAccount = +t.value; rerenderKeepScroll(); return; }
   if(t.dataset.act==='signway'){ S.signway = t.value; rerenderKeepScroll(); return; }
   if(t.dataset.act==='dms-program'){ S.sel.dms.program = t.value; rerenderKeepScroll(); return; }

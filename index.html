@@ -736,6 +736,20 @@ label.tag{cursor:pointer;position:relative}
 @media(max-width:1000px){.coverage-card>.figma-art{height:160px}}
 @media(max-width:767px){.promo-hero>.package-art{display:none}.coverage-card>.figma-art{width:180px;height:160px}.sp__intro>.figma-art{width:120px;height:120px}}
 
+
+/* v1.3 additions reuse the current component tokens. */
+.prototype-tools{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;flex-shrink:0;min-width:0}
+.prototype-label{font-size:12px;line-height:16px;color:var(--text-secondary)}
+.prototype-tools .tag{white-space:nowrap;font-size:13px;line-height:20px;padding:8px 10px}
+.psec h4{font-size:18px;line-height:24px;margin:0 0 8px}.psec p{margin:8px 0}.psec ul{margin:8px 0;padding-left:20px}
+.policy .tv__row span:last-child{text-align:right}.done__card .actions{justify-content:center;flex-wrap:wrap;margin-top:24px}
+.done>.block{width:100%}.done__card .status{margin-bottom:16px}.done__card p{max-width:65ch;margin:12px auto}.done__card .t-sm{font-size:14px;line-height:20px}
+.dlg__ft{flex-wrap:wrap}.dlg__ft .lnk{font-size:14px;line-height:20px}.dlg__body .field{margin:12px 0}
+@media(max-width:1600px){.sfa__contact{display:none}}
+@media(max-width:1100px){.sfa__head,.sfa__tabs{position:relative;top:auto}.top__client,.top__role{display:none}.top{height:auto;min-height:64px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}.sfa__head{height:auto;min-height:64px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}}
+@media(max-width:760px){.sfa__main{grid-column:1}}
+@media(max-width:600px){.prototype-tools{gap:4px}.prototype-tools .tag{font-size:12px;padding:6px 7px}.prototype-label{display:none}.top__spacer{display:none}.done__card{padding:24px 16px}.tv__row{overflow-wrap:anywhere}.policy .tv__row{align-items:flex-start}.dlg__ft .btn{max-width:100%;white-space:normal}}
+
 </style>
 </head>
 <body>
@@ -786,7 +800,7 @@ const SCHEMA = {
      min:3000000, max:10000000,
      bands:[[3000000,.001]],
      options:[
-       {id:'quality', name:'Вред из-за недостатков товаров, работ или услуг', desc:'Возмещение вреда жизни, здоровью или имуществу третьих лиц из-за недостатков товаров, работ или услуг. До 25% выбранного лимита: эта сумма входит в общий лимит и не увеличивает его', sublimit:.25, rate:.001}]}
+       {id:'quality', name:'Вред из-за недостатков товаров, работ или услуг', desc:'Возмещение вреда жизни, здоровью или имуществу третьих лиц из-за недостатков товаров, работ или услуг. До 25% выбранного лимита. Эта сумма входит в общий лимит и не увеличивает его', sublimit:.25, rate:.001}]}
   ],
   presets:[
     {id:'base', name:'Базовый',
@@ -819,7 +833,7 @@ const VALID = {
     return w.length <= 5 && w.every(x=>FIO_WORD.test(x)) ? '' : 'Только буквы, дефис и апостроф'; },
   dob: v => { const m=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v.trim()); if(!m) return 'Дата в формате ДД.ММ.ГГГГ';
     const d=new Date(+m[3],m[2]-1,+m[1]); if(d.getDate()!==+m[1]||d.getMonth()!==m[2]-1) return 'Такой даты нет';
-    const today=new Date();
+    const today=new Date(localBusinessDate()+'T12:00:00');
     const age=today.getFullYear()-d.getFullYear()-((today.getMonth()<d.getMonth() || (today.getMonth()===d.getMonth() && today.getDate()<d.getDate()))?1:0);
     return age<SCHEMA.rules.minAge||age>SCHEMA.rules.maxAge ? 'Сотруднику должно быть от 18 до 65 лет включительно' : ''; },
   phone: v => { const x=v.replace(/\D/g,''); return /^[78]?9\d{9}$/.test(x) ? '' : 'Нужен российский мобильный: +7 и 10 цифр'; },
@@ -839,7 +853,7 @@ const staffMiss = p => [['dob','дату рождения'],['phone','телеф
 const EMPN = () => S.staff.filter(p=>p.on && staffFull(p)).length;
 /* На шаге выбора указывают число сотрудников; на следующем шаге оно
    заменяется фактически добавленным списком. */
-const quoteEmployees = () => ['config','details'].includes(S.step) && !EMPN() ? S.estimateEmployees : EMPN();
+const quoteEmployees = () => ['config','details'].includes(S.step) && !EMPN() && !S.staffListStarted ? S.estimateEmployees : EMPN();
 const perHeadPending = s => s.per==='employee' && !quoteEmployees();
 const esc  = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt  = n => new Intl.NumberFormat('ru-RU').format(Math.round(n));
@@ -896,7 +910,7 @@ const START = {
   agreed:false, agreedFor:null, completedKey:null, signed:false, signway:'pep', consent:false, warn:null,
   code:'', codeArr:[], codeLeft:0, codeTries:3, codeWrong:false, codeHelp:false, codeSentAt:0, codeSession:false,
   showErrorsDetails:false, agreeErr:false, empOver:false, mismatch:false, mismatchOk:null, managerReq:false, explain:null,
-  staffDelete:null, staffPending:null
+  staffDelete:null, staffPending:null, staffListStarted:false, operation:null, demoPanel:false, demoScenario:'success', demoExpiryConsumed:false, pricingBusy:false, paperPrepared:false, signBusy:false, signError:false, codeExpired:false, codeExpiresAt:0, managerState:'idle'
 };
 let S = structuredClone(START);
 
@@ -906,7 +920,7 @@ const xround = n => Math.sign(n) * Math.round(Math.abs(+n.toPrecision(12)));
 /* INDEX(тарифы; MATCH(СС; «от»; 1)), при СС меньше первой границы — первый тариф (IFERROR) */
 const bandRate = (bands, v) => { let r = bands[0][1]; for(const [from, rate] of bands) if(v >= from) r = rate; return r; };
 const sumsOf = sel => sel.sums || {};
-const optDesc = o => o.desc;
+const optDesc = o => o.id==='quality'?`До ${RUB((+S.sel.liability.limit||3000000)*.25)} в пределах общего лимита. Возмещение вреда жизни, здоровью или имуществу третьих лиц из-за недостатков товаров, работ или услуг. Сумма входит в общий лимит и не увеличивает его`:o.desc;
 const dmsProgram = (sel = S.sel.dms) => sec('dms').programs.find(p=>p.id===sel.program) || sec('dms').programs[0];
 /* ГО без имущества и ДМС не оформляется: в таблице её премия тогда 0 */
 const liabilityAllowed = (sel = S.sel) => sel.prop.on || sel.dms.on;
@@ -1055,8 +1069,8 @@ const PRI = () => S.channel==='sfa' ? 'btn--primary' : 'btn--accent';
 const AMOUNT = n => { const [maj,min] = fmt2(n).split(','); return `<span class="amount">${maj}<small>,${min} ₽</small></span>`; };
 const btnIcon = icon => icon.replace('<svg ', '<svg class="btn__icon" ');
 const CHANNELS = [['nib','Интернет-банк'],['sfa','Рабочее место']];
-const elChannel = () => `<div class="chan" role="group" aria-label="Канал">${CHANNELS.map(([id,name])=>
-  `<button type="button" class="tag" data-act="channel" data-v="${id}" aria-pressed="${S.channel===id}">${name}</button>`).join('')}</div>`;
+const elChannel = () => `<div class="prototype-tools"><span class="prototype-label">Демо v1.3</span><div class="chan" role="group" aria-label="Канал">${CHANNELS.map(([id,name])=>
+  `<button type="button" class="tag" data-act="channel" data-v="${id}" aria-pressed="${S.channel===id}">${name}</button>`).join('')}</div><button type="button" class="tag" data-act="demo-open">Сценарии</button></div>`;
 const RUB = n => `${fmt(n)}\u00A0₽`;
 /* Чей это бизнес — из данных, которые у банка уже есть */
 const MINE = () => S.channel==='sfa' ? 'бизнес клиента' : 'ваш бизнес';
@@ -1117,14 +1131,14 @@ const singleFrom = sid => Math.max(minPrice(sid), SCHEMA.rules.minPremium);
 const empRate = (sel = S.sel.dms) => dmsProgram(sel).price + activeOpts('dms', sel).reduce((a,oid)=>a+(sec('dms').options.find(o=>o.id===oid)?.perEmp||0),0);
 /* Расчёт с n сотрудниками по оценке — для цены «от», пока число не указано */
 function calcAt(n){
-  const e = S.estimateEmployees, st = S.step;
-  S.estimateEmployees = n; if(!['config','details'].includes(st)) S.step = 'config';
-  const c = calc(); S.estimateEmployees = e; S.step = st; return c;
+  const saved = {estimate:S.estimateEmployees,step:S.step,staff:S.staff,started:S.staffListStarted};
+  try{ S.estimateEmployees=n; S.step='config'; S.staff=[]; S.staffListStarted=false; return calc(); }
+  finally{ S.estimateEmployees=saved.estimate; S.step=saved.step; S.staff=saved.staff; S.staffListStarted=saved.started; }
 }
 /* ДМС включён, а число сотрудников не указано: итог не выдаём за окончательный */
-const dmsPending = () => S.sel.dms.on && !quoteEmployees();
+const dmsPending = () => S.sel.dms.on && !quoteEmployees() && !S.staffListStarted;
 const EMPG = n => plural(n,'сотрудника','сотрудников','сотрудников');
-const ACC = () => ACCOUNTS[S.payAccount][0].replace('Расчётный счёт ','');
+const ACC = () => ACCOUNTS[S.payAccount]?.[0]?.replace('Расчётный счёт ','') || 'Не выбран';
 /* У фиксированной программы одна цена, не диапазон — без слова «от» */
 const priceWord = s => s.fixed ? '' : 'от ';
 /* Минимальная премия пакета из правил продукта: любой набор модулей, но не дешевле */
@@ -1285,12 +1299,13 @@ function elEstimateReminder(){
 /* Счёт списания — на шаге настройки, как в макете (AccountSelect, FormControl 56) */
 function accountError(){
   const p = calc().premium, a = ACCOUNTS[S.payAccount];
-  return p > a[2] ? `Недостаточно средств: нужно ${RUB(p)}, на счёте ${a[1]}` : '';
+  if(!a)return 'Счёт недоступен. Выберите другой счёт';
+  return p > a[2] ? 'На счёте недостаточно средств. Выберите другой счёт' : '';
 }
 function elAccount(){
   const err = accountError();
-  return `<section class="block"><h2 class="t-h3">Счёт списания</h2>
-    <div><div class="field field--select${err?' field--err':''}"><label for="pay-acc">${ACCOUNTS[S.payAccount][0]}</label>
+  return `<section class="block"><h2 class="t-h3">Счёт для списания</h2>
+    <div><div class="field field--select${err?' field--err':''}"><label for="pay-acc">${ACCOUNTS[S.payAccount]?.[0]||'Выберите счёт'}</label>
       <select id="pay-acc" data-act="pay-acc" ${err?'aria-invalid="true" aria-describedby="pay-acc-err"':''}>${ACCOUNTS.map((a,i)=>`<option value="${i}" ${S.payAccount===i?'selected':''}>${a[1]}${S.payAccount===i?'':` · ${a[0]}`}</option>`).join('')}</select></div>
       ${err?`<p class="field__err" id="pay-acc-err">${err}</p>`:''}</div>
   </section>`;
@@ -1309,14 +1324,6 @@ function elBankFee(){
   return `<div class="isle"><details class="module-coverage"><summary>Вознаграждение банка · видите только вы</summary>
     <p class="t-sm sec">${RUB(c.bank)} · ${Math.round(c.bank/c.premium*100)}% от стоимости</p></details></div>`;
 }
-function elPkgSummary(){
-  const c = calc();
-  return `<div class="cells cells--last">${c.rows.map(r=>{const s=sec(r.id);
-      return `<div class="cell"><div class="cell__main"><div class="cell__t">${s.name}</div><div class="cell__s">${sectionLine(s, true)}</div></div><div class="cell__r"><b>${RUB(r.premium)}</b></div></div>`;}).join('')}
-    ${c.topup ? `<div class="cell"><div class="cell__main"><div class="cell__t">Доплата до минимальной стоимости</div><div class="cell__s">${S.flow==='single' ? `Минимальная стоимость страховки — ${RUB(SCHEMA.rules.minPremium)} в год` : `Минимальная стоимость пакета — ${RUB(SCHEMA.rules.minPremium)} в год`}</div></div><div class="cell__r"><b>${RUB(c.topup)}</b></div></div>` : ''}
-    <div class="cell"><div class="cell__main"><div class="cell__t">Итого в год</div></div><div class="cell__r"><b class="strong">${RUB(c.premium)}</b></div></div>
-  </div>`;
-}
 const DOCS = () => [['policy','Полис','Макет']];
 function elDocs(){
   return `<ul class="docs">${DOCS().map(([id,d,m])=>`<li><button type="button" class="docs__row" data-act="doc" data-v="${id}"><span class="docs__ico" aria-hidden="true">${SVG_DOC}</span><span class="docs__name">${d}</span><span class="docs__meta">${m}</span><span class="docs__dl" aria-hidden="true">${SVG_CHEV}</span></button></li>`).join('')}</ul>`;
@@ -1331,21 +1338,6 @@ function elAfter(){
   return `<div class="policy"><div class="policy__hd"><div class="t-h3">После реального оформления</div></div>
     <ul class="list">${[`Полис придёт на ${esc(S.payMail)}`, `Банк спишет ${RUB(c.premium)} со счёта ${ACC()}, защита действует 1 год с даты оплаты`, 'Если случится страховой случай, обратитесь к страховщику'].map(t=>`<li>${mk()}<span>${t}</span></li>`).join('')}</ul>
     ${elDocs()}</div>`;
-}
-function elPolicy(){
-  const c = calc();
-  return `<div class="policy">
-    <div class="policy__hd"><div class="t-h3">${SCHEMA.title}</div><div class="t-sm sec">Заглушка единого полиса для ${CLIENT.name}. Не является действующим полисом</div></div>
-    <p class="t-sm sec">Начало защиты — дата подтверждённой оплаты. В макете нет номера договора и действующей страховой защиты.</p>
-    <div>${c.rows.map(r=>{const s=sec(r.id);
-      const what = coverageItems(s).join('; ');
-      const add = r.opts.map(o=>`${o.name}: ${RUB(optPrice(s.id,o.id))} в год`).join('; ');
-      const sum = s.per==='employee' ? EMP(EMPN()) : RUB(r.insured);
-      return `<div class="psec"><b>${s.name}<em>${sum}</em></b><span>${what}</span>${add?`<span>Доп. услуги: ${add}</span>`:''}</div>`;}).join('')}</div>
-    <div class="sum">
-    ${c.topup ? `<div class="srow"><span>Доплата до минимальной стоимости</span><b>${fmt2(c.topup)} ₽</b></div>` : ''}
-    <div class="srow"><span>Расчёт стоимости за год</span><b>${fmt2(c.premium)} ₽</b></div></div>
-  </div>`;
 }
 /* Шаг «Проверка и подписание» — как в макете: параметры таблицей
    (TableView), документы со скачиванием, кнопки под блоками. */
@@ -1379,94 +1371,13 @@ function elCheckoutBlocks(){
 }
 /* Код подтверждения — UniversalModal по центру, как в макете: CodeInput
    на пять ячеек, отправка сразу после ввода последней цифры. */
-/* В прототипе код «00000» считается неверным — чтобы показать состояние
-   ошибки из макета. Любые другие пять цифр подходят. */
+/* Только код 12345 подтверждает подпись в демонстрации. */
 const CODE_LEN = 5;
-const WRONG_CODE = '0'.repeat(CODE_LEN);
 const mmss = t => `00:${String(t).padStart(2,'0')}`;
 const codeDigits = () => Array.from({length:CODE_LEN},(_,i)=>S.codeArr[i]||'');
 const syncCode = () => { S.code = codeDigits().join(''); };
-function elCodeDialog(){
-  if(!S.signing) return '';
-  const out = S.codeTries<=0, err = S.codeWrong;
-  const errText = out ? 'Попытки закончились. Запросите новый код' : `Код не подходит, проверьте его. Осталось попыток: ${S.codeTries}`;
-  return `<div class="dlg__scrim" data-act="code-close"><div class="dlg dlg--600 dlg--code" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
-    <div class="dlg__hd"><button type="button" class="dlg__x" data-act="code-close" aria-label="Закрыть">${SVG_X}</button></div>
-    <div class="dlg__body">
-      <h3 id="dlg-t" tabindex="-1">Подписание согласия на поручения</h3>
-      <p class="code__to">Для демонстрации подписи введите <b>12345</b>. Уведомление не отправляется, деньги не списываются.</p>
-      <div class="code${err?' code--err code--shake':''}"><div class="code__cells" role="group" aria-label="Демонстрационный код, ${CODE_LEN} цифр">
-        ${codeDigits().map((d,i)=>`<input class="code__cell" id="${i?`code-in-${i}`:'code-in'}" data-act="code-cell" data-i="${i}" value="${esc(d)}" inputmode="numeric" pattern="[0-9]*"
-          autocomplete="${i?'off':'one-time-code'}" aria-label="Цифра ${i+1}" ${out||S.signed?'disabled':''} ${err?'aria-invalid="true" aria-describedby="code-err"':''}>`).join('')}
-      </div></div>
-      ${err?`<p class="code__err" id="code-err" role="alert" tabindex="-1">${errText}</p>`:''}
-      ${S.signed?`<p class="code__ok" role="status">Согласие подтверждено в демо</p>`:''}
-      <div class="code__more">
-        ${S.codeLeft>0
-          ? `<p class="sec">Повторить ввод можно через <span id="code-timer">${mmss(S.codeLeft)}</span></p>`
-          : `<button type="button" class="lnk" id="code-resend" data-act="code-resend">Повторить ввод кода</button>`}
-        <button type="button" class="lnk lnk--pseudo lnk--secondary" id="code-help-btn" data-act="code-help" aria-expanded="${S.codeHelp}" aria-controls="code-help">Как пройти демо?</button>
-      </div>
-      ${S.codeHelp?`<div class="note code__help" id="code-help"><span>Для успешного подтверждения введите 12345. Код 00000 показывает ошибку ввода. Уведомления в прототипе не отправляются</span></div>`:''}
-    </div>
-  </div></div>`;
-}
-function signCode(){
-  if(S.signed || S.step!=='checkout' || !S.signing) return;
-  if(!checkoutReady()) return;
-  refreshApproval();
-  if(!S.agreed){S.agreeErr=true;rerenderKeepScroll();return;}
-  if(S.codeTries<=0){
-    live.textContent='Попытки закончились. Запросите новый код';
-    (app.querySelector('#code-resend')||app.querySelector('#code-err')||app.querySelector('#code-help-btn'))?.focus();
-    return;
-  }
-  if(S.code.length!==CODE_LEN){
-    live.textContent='Введите пять цифр кода';
-    app.querySelector('#code-in')?.focus();
-    return;
-  }
-  if(S.signing && S.code===WRONG_CODE){
-    S.codeTries--; S.codeWrong=true; S.code=''; S.codeArr=[]; rerenderKeepScroll();
-    const f = app.querySelector('#code-in'); if(f && !f.disabled) f.focus(); else (app.querySelector('#code-resend')||app.querySelector('#code-err')).focus();
-    return;
-  }
-  S.signed=true; clearInterval(codeTimer); rerenderKeepScroll();
-  const serial=++completionSerial, accepted=quoteKey();
-  setTimeout(()=>{
-    if(serial!==completionSerial || S.step!=='checkout' || !S.signing || !S.signed || accepted!==quoteKey()) return;
-    S.completedKey=accepted;S.step='done';S.signing=false;render();window.scrollTo({top:0,behavior:'smooth'});
-  },700);
-}
 let codeTimer = null;
-function startCode(fresh=true){
-  if(fresh) Object.assign(S, {code:'', codeArr:[], codeLeft:30, codeTries:3, codeWrong:false, codeSentAt:Date.now(), codeSession:true});
-  const left = () => Math.max(0, 30 - Math.floor((Date.now() - S.codeSentAt) / 1000));
-  S.codeLeft = left();
-  clearInterval(codeTimer);
-  if(!S.codeLeft) return;
-  codeTimer = setInterval(()=>{
-    if(!S.signing || S.signed){ clearInterval(codeTimer); return; }
-    S.codeLeft = left();
-    if(S.codeLeft<=0){
-      clearInterval(codeTimer); const lost = ['code-err','code-in'].includes(document.activeElement.id) && S.codeTries<=0;
-      rerenderKeepScroll(); if(lost || document.activeElement===document.body){ const r=document.getElementById('code-resend'); if(r) r.focus(); }
-      return;
-    }
-    const el = document.getElementById('code-timer'); if(el) el.textContent = mmss(S.codeLeft);
-  }, 1000);
-}
 /* Текст согласия — Modal 500 */
-function elConsentDialog(){
-  if(!S.consent) return '';
-  return `<div class="dlg__scrim" data-act="consent-close"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cns-t">
-    <div class="dlg__hd"><h3 id="cns-t" tabindex="-1">Согласие на поручения</h3>
-      <button type="button" class="dlg__x" data-act="consent-close" aria-label="Закрыть">${SVG_X}</button></div>
-    <div class="dlg__body"><p class="t-md">В прототипе показано подписание согласия на поручения по оформлению страховки. Это мокап документа; юридический текст будет добавлен позже. Стоимость выбранной страховки: ${RUB(calc().premium)} за год, счёт ${ACC()}.</p></div>
-    <div class="dlg__ft"><button type="button" class="btn btn--48 ${PRI()}" data-act="consent-close">Понятно</button></div>
-  </div></div>`;
-}
-
 const dlg500 = (id, title, body, foot, close) => `<div class="dlg__scrim" data-act="${close}"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="${id}">
     <div class="dlg__hd"><h3 id="${id}" tabindex="-1">${title}</h3>
       <button type="button" class="dlg__x" data-act="${close}" aria-label="Закрыть">${SVG_X}</button></div>
@@ -1474,21 +1385,6 @@ const dlg500 = (id, title, body, foot, close) => `<div class="dlg__scrim" data-a
     <div class="dlg__ft">${foot}</div>
   </div></div>`;
 /* Застрахованных меньше, чем указано на первом шаге: подтверждение перед подписанием */
-function elMismatchDialog(){
-  if(!S.mismatch) return '';
-  const k = EMPN(), N = S.estimateEmployees, rest = N - k, c=calc();
-  const before=Math.max(SCHEMA.rules.minPremium,c.base+(N-k)*empRate());
-  return dlg500('mm-t', `Застраховать только ${k} из ${N} сотрудников?`,
-    `<p class="t-md">${rest===1 ? 'Ещё один сотрудник не получит ДМС' : `Остальные ${rest} не получат ДМС`}. Добавить их можно сейчас, на этом шаге</p><div class="tv"><div class="tv__row"><span class="tv__k">Предварительно за ${N}</span><span class="tv__v">${RUB(before)} в год</span></div><div class="tv__row"><span class="tv__k">За выбранных ${k}</span><span class="tv__v">${RUB(c.premium)} в год</span></div></div>`,
-    `<button type="button" class="btn btn--48 ${PRI()}" data-act="mismatch-ok">Продолжить с ${k}</button>
-     <button type="button" class="btn btn--48 btn--secondary" data-act="mismatch-add">Добавить остальных</button>`, 'mismatch-close');
-}
-function elManagerDialog(){
-  if(!S.managerReq) return '';
-  return dlg500('mgr-t', 'Заявка менеджеру',
-    `<p class="t-md">Менеджер банка свяжется с вами, чтобы подобрать защиту для компании, которой не подходят условия пакета. В прототипе заявка не отправляется</p>`,
-    `<button type="button" class="btn btn--48 ${PRI()}" data-act="manager-close">Понятно</button>`, 'manager-close');
-}
 /* «Что это значит» у услуги: термины из полиса и их смысл */
 function elExplainDialog(){
   if(!S.explain) return '';
@@ -1501,11 +1397,11 @@ function elStaffDelDialog(){
   if(S.staffDelete==null) return '';
   const p = S.staff[S.staffDelete]; if(!p) return '';
   return dlg500('sdel-t', 'Удалить сотрудника?',
-    `<p class="t-md">${esc(p.fio)} не войдёт в страховку${staffFull(p) ? `. ДМС станет дешевле на ${RUB(empRate())} в год` : ''}</p>`,
+    `<p class="t-md">${esc(p.fio)} не войдёт в страховку${staffFull(p) ? (EMPN()>1?`. ДМС станет дешевле на ${RUB(empRate())} в год`:'. Для оформления ДМС нужен хотя бы один сотрудник') : ''}</p>`,
     `<button type="button" class="btn btn--48 ${PRI()}" data-act="staff-del-ok">Удалить</button>
      <button type="button" class="btn btn--48 btn--secondary" data-act="staff-del-close">Отменить</button>`, 'staff-del-close');
 }
-const elDialogs = () => `${elPanel()}${elStaffForm()}${elCodeDialog()}${elConsentDialog()}${elMismatchDialog()}${elManagerDialog()}${elExplainDialog()}${elStaffDelDialog()}${elToast()}`;
+const elDialogs = () => `${elDemoDialog()}${elPanel()}${elStaffForm()}${elCodeDialog()}${elConsentDialog()}${elMismatchDialog()}${elManagerDialog()}${elExplainDialog()}${elStaffDelDialog()}${elToast()}`;
 
 /* ── «Подробнее» и «Условия»: UniversalModal справа, 600, фон modal-bg-alt ── */
 function spShell(title, body, foot, intro=null){
@@ -1531,8 +1427,8 @@ function elFixedFacts(s){
 function elEmployeeEstimate(){
   if(S.step!=='config') return '';
   /* Список уже есть: цена считается по нему, поле числа больше ни на что не влияет */
-  if(S.staff.length) return `<div class="grp"><div class="tv"><div class="tv__row"><span class="tv__k">Сотрудников в списке</span><span class="tv__v">${EMP(EMPN())}</span></div></div>
-    <div><button type="button" class="lnk" data-act="go" data-v="details">Изменить список</button></div></div>`;
+  if(S.staff.length||S.staffListStarted) return `<div class="grp"><div class="tv"><div class="tv__row"><span class="tv__k">Сотрудников в списке</span><span class="tv__v">${EMP(EMPN())}</span></div></div>
+    <div><button type="button" class="lnk" data-act="edit-staff">Изменить список</button></div></div>`;
   const n = S.estimateEmployees, max = SCHEMA.rules.maxEmployees, over = S.empOver;
   return `<div class="grp"><div>
     <div class="field field--number${over?' field--err':''}"><label for="estimate-employees">Количество сотрудников</label>
@@ -1627,7 +1523,7 @@ function elPanel(){
     ? [[SVG_WALLET, `от ${RUB(minPrice(s.id))} в год`, 'Зависит от лимита ответственности'],
        [SVG_SHIELD, `Лимит ${RANGE(s.min, s.max)}`, 'Только вместе с имуществом или ДМС']]
     : [[SVG_WALLET, `от ${RUB(singleFrom(s.id))} в год`, `Минимальная стоимость страховки — ${RUB(SCHEMA.rules.minPremium)} в год`],
-       [SVG_HOUSE, `Помещение ${RANGE(s.objects[0].min, s.objects[0].max)}`, 'Только помещение в собственности компании. Оборудование и товар по выбору, до 5 млн ₽ каждое']];
+       [SVG_HOUSE, `Помещение ${RANGE(s.objects[0].min, s.objects[0].max)}`, 'Только собственникам помещения — ИП и юридическим лицам. Оборудование и товар по выбору, до 5 млн ₽ каждое']];
   return spShell(s.name,
     `<div class="plate plate--tight">${facts.map(([icon,t,d])=>`<div class="fact"><span class="fact__ico" aria-hidden="true">${icon}</span><span><span class="fact__t">${t}</span><span class="fact__s">${d}</span></span></div>`).join('')}</div>
       <div class="plate"><h4 class="t-h3">${COVERAGE_COPY[s.id].title}</h4>${elCoverage(s)}</div>
@@ -1676,11 +1572,11 @@ function nibShowcase(){
   return nibShell(`<div class="page showcase-page">
     <div class="page__hd"><h1 class="t-h1">Страховки для бизнеса</h1><p class="t-md">Страховые услуги оказывает страховая компания-партнёр банка</p></div>
     ${elResume()}
-    <div class="grid showcase-grid">${elSingleCard('dms',sec('dms').name,sec('dms').short,[['Стоимость за сотрудника',`${RUB(minPrice('dms'))} в год`]],ART.dms)}${elPackagePlacements()}</div>
+    <div class="grid showcase-grid">${elSingleCard('dms',sec('dms').name,sec('dms').short,[['Стоимость за сотрудника',`От ${RUB(minPrice('dms'))} в год за сотрудника`]],ART.dms)}${elPackagePlacements()}</div>
   </div>`);
 }
 /* Проверка состава — тексты и порядок как в ячейке «Проверка пакета» листа «Калькулятор» */
-function configCheck(){
+function configCheck(allowEmptyStaff=false){
   const sel = S.sel, R = SCHEMA.rules, p = sec('prop'), l = sec('liability'), n = SCHEMA.sections.filter(s=>sel[s.id].on).length;
   const out = (v,o) => v < o.min || v > o.max;
   const sums = sel.prop.sums, emp = quoteEmployees();
@@ -1693,13 +1589,13 @@ function configCheck(){
   if(sel.prop.on && out(+sums.build, obj('build'))) return ['prop','Имущество: сумма по помещению вне диапазона'];
   if(sel.prop.on && +sums.stock > 0 && out(+sums.stock, obj('stock'))) return ['prop','Имущество: сумма по товарным запасам вне диапазона'];
   if(sel.prop.on && +sums.equip > 0 && out(+sums.equip, obj('equip'))) return ['prop','Имущество: сумма по оборудованию вне диапазона'];
-  if(sel.dms.on && !emp) return ['dms','ДМС: укажите количество сотрудников'];
+  if(sel.dms.on && !emp && !(allowEmptyStaff&&S.staffListStarted)) return ['dms','ДМС: укажите количество сотрудников'];
   if(sel.dms.on && emp > R.maxEmployees) return ['dms',`ДМС: не больше ${R.maxEmployees} сотрудников`];
   if(sel.liability.on && !+sel.liability.limit) return ['liability','Гражданская ответственность: укажите лимит'];
   if(sel.liability.on && out(+sel.liability.limit, l)) return ['liability',`Гражданская ответственность: лимит ${RANGE(l.min, l.max)}`];
   return [null,''];
 }
-function configBlock(){ return configCheck()[1]; }
+function configBlock(){ return S.pricingBusy?'Рассчитываем стоимость…':configCheck()[1]; }
 function badModule(){ return configCheck()[0]; }
 function detailsBlock(){
   const c = calc();
@@ -1725,7 +1621,7 @@ function topupNote(c){
 function flowBar(target, block){
   /* Пока число сотрудников не указано, сумма и доплата считаются с одним сотрудником — «от» */
   const pending = dmsPending(), c = pending ? calcAt(1) : calc(), shown = block && (target==='details' ? S.showErrors : S.showErrorsDetails);
-  const first = pending ? `от ${AMOUNT(c.premium)}` : AMOUNT(c.premium);
+  const first = S.pricingBusy?'Рассчитываем стоимость…':pending ? `от ${AMOUNT(c.premium)}` : AMOUNT(c.premium);
   const second = pending ? ['За каждого сотрудника', RUB(empRate())]
     : S.sel.dms.on ? ['Застрахованные', `${quoteEmployees()}${EMPN() ? '' : ', предварительно'}`]
     : ['Видов защиты', String(c.onIds.length)];
@@ -1734,7 +1630,7 @@ function flowBar(target, block){
       <div class="flow__num"><span>${second[0]}</span><b>${second[1]}</b></div></div>
     ${topupNote(c) ? `<p class="flow__note">${topupNote(c)}</p>` : ''}
     ${shown ? `<p class="field__err" id="config-block" role="alert">${block}</p>` : ''}
-    <div class="actions"><button type="button" class="btn btn--56 ${PRI()}" data-act="go" data-v="${target}" ${shown?'aria-describedby="config-block"':''}>Продолжить</button><button type="button" class="btn btn--56 btn--transparent" data-act="terms">Условия страхования</button></div>
+    <div class="actions"><button type="button" class="btn btn--56 ${PRI()}" data-act="go" data-v="${target}" ${S.pricingBusy?'disabled aria-busy="true"':''} ${shown?'aria-describedby="config-block"':''}>Продолжить</button><button type="button" class="btn btn--56 btn--transparent" data-act="terms">Условия страхования</button></div>
   </div>`;
 }
 function configBar(){ return flowBar('details',configBlock()); }
@@ -1747,7 +1643,7 @@ const quoteKey = () => JSON.stringify({version:SCHEMA.version,ownership:S.proper
   channel:S.channel,signway:S.signway,premium:calc().premium});
 let completionSerial=0;
 function invalidateApproval(){
-  completionSerial++;S.agreed=false;S.agreedFor=null;S.signed=false;S.signing=false;
+  completionSerial++;S.agreed=false;S.agreedFor=null;S.signed=false;S.signing=false;S.paperPrepared=false;
   S.codeSession=false;S.code='';S.codeArr=[];clearInterval(codeTimer);
 }
 function refreshApproval(){
@@ -1761,7 +1657,7 @@ function routeProblem(target){
   if(target==='checkout'){
     S.step='details';const detail=detailsBlock();S.step=before;
     if(detail) return {step:'details',message:detail};
-    if(S.sel.dms.on && S.estimateEmployees && EMPN()<S.estimateEmployees && S.mismatchOk!==EMPN())
+    if(staffMismatchNeeded())
       return {step:'details',mismatch:true,message:'Проверьте число сотрудников и итоговую стоимость'};
   }
   return null;
@@ -1785,9 +1681,11 @@ function checkoutReady(){
 }
 
 function quoteRail(){
-  const pending=dmsPending(), c=pending?calcAt(1):calc();
-  return `<aside class="isle quote-rail"><h3 class="t-h4">Стоимость полиса</h3>${c.rows.map(r=>`<div><span>${sec(r.id).name}</span><b>${RUB(r.premium)}</b></div>`).join('')}${c.topup?`<div><span>Доплата до минимальной стоимости</span><b>${RUB(c.topup)}</b></div>`:''}<div><span>Сумма за год</span><strong>${pending?'от ':''}${RUB(c.premium)}</strong></div></aside>`;
+  if(S.pricingBusy)return '<aside class="isle quote-rail" role="status"><h3 class="t-h4">Стоимость полиса</h3><p>Рассчитываем стоимость…</p></aside>';
+  const pending=dmsPending(),c=pending?calcAt(1):calc();
+  return `<aside class="isle quote-rail"><h3 class="t-h4">Стоимость полиса</h3>${c.rows.map(r=>`<div><span>${sec(r.id).name}</span><b>${RUB(r.premium)}</b></div>`).join('')}<div><span>Стоимость модулей</span><b>${RUB(c.base)}</b></div>${c.topup?`<div><span>Доплата до минимальной стоимости</span><b>${RUB(c.topup)}</b></div>`:''}<div><span>Сумма за год</span><strong>${pending?'от ':''}${RUB(c.premium)}</strong></div><p class="t-sm sec">${pending?'Укажите число сотрудников для точной цены. ':''}Суммы защиты и стоимость полиса — разные показатели.</p></aside>`;
 }
+
 function packageCards(){
  const descriptions={prop:'Выплата при повреждении помещения, оборудования или товара, например из-за пожара или залива. Только для собственников помещения — ИП и юридических лиц. При аренде модуль недоступен.',liability:'Возмещение вреда посетителям и ущерба имуществу посетителей, соседей или арендодателя. Только вместе с имуществом или ДМС.',dms:sec('dms').short};
  return `<section class="sect"><h2 class="t-h2">Выберите виды защиты</h2><div class="coverage-grid">${['prop','liability','dms'].map(id=>`<article class="coverage-card"><h3 class="t-h3">${sec(id).name}</h3><p>${descriptions[id]}</p><button class="btn btn--48 btn--secondary" data-act="panel" data-v="${id}">Подробнее</button>${figmaImage(id==='prop'?'property':'shield')}</article>`).join('')}</div></section>`;
@@ -1839,13 +1737,6 @@ function elDone(title, text, extra, back){
     ${extra}
   </div>`;
 }
-function nibDone(){
-  return nibShell(`<div class="page">
-    <div class="page__hd"><h1 class="t-h1">${prodTitle()}</h1></div>
-    ${elDone('Демонстрация подписи завершена', 'Показано подписание согласия на поручения. Реальные документы не подписаны, полис не оформлен, деньги не списаны', elPolicy() + elAfter(), 'К страховкам')}
-  </div>`);
-}
-
 /* ═══════════ КАНАЛ 2 · SFA ═════════════════════════════════════
    Оформление и счёт — часть страницы, а не модалка: правило дизайн-
    системы разрешает модалкой только точечное подтверждение, не
@@ -1864,16 +1755,16 @@ function sfaShell(content){
 }
 function elSfaRecommendation(){
   /* Цена без сотрудников и с одним: из-за минимальной премии разница не равна цене ДМС */
-  const saved = {staff:S.staff, step:S.step, est:S.estimateEmployees};
-  S.staff = []; S.step = 'config'; S.estimateEmployees = 0;
+  const saved = {staff:S.staff, step:S.step, est:S.estimateEmployees,started:S.staffListStarted};
+  S.staff = []; S.staffListStarted=false; S.step = 'config'; S.estimateEmployees = 0;
   const c = presetCalc('reco');
   S.estimateEmployees = 1;
   const c1 = presetCalc('reco');
-  S.staff = saved.staff; S.step = saved.step; S.estimateEmployees = saved.est;
+  S.staff = saved.staff; S.step = saved.step; S.estimateEmployees = saved.est; S.staffListStarted=saved.started;
   const perEmployee = presetEmployeeIncrement('reco');
   const reasons = [
-    ['Имущество магазина','Уточнить, что помещение в собственности клиента, и стоимость помещения, оборудования и товара'],
-    ['Сотрудники','Уточнить количество для расчёта ДМС и нужна ли стоматология'],
+    ['Собственность помещения','Помещение принадлежит страхователю или арендуется?'],
+    ['Сотрудники','Сколько сотрудников нужно включить в ДМС?'],
     ['Посетители и соседи','Выбрать отдельный лимит ответственности за ущерб третьим лицам']
   ];
   return `<section class="sfa-reco" aria-labelledby="sfa-reco-title">
@@ -1908,7 +1799,7 @@ function sfaProducts(){
     <section class="sect">
       <div class="page__hd"><h2 class="t-h3">Отдельные страховки</h2><p class="t-md">Их можно оформить отдельно, без комплексного пакета</p></div>
       <div class="cells">
-      ${single('dms','ДМС',[['Стоимость за сотрудника',`${RUB(minPrice('dms'))} в год`]])}
+      ${single('dms','ДМС',[['Стоимость за сотрудника',`От ${RUB(minPrice('dms'))} в год за сотрудника`]])}
       ${single('prop','Защита имущества',[['Стоимость',`от ${RUB(singleFrom('prop'))} в год`],['Помещение', RANGE(sec('prop').objects[0].min, sec('prop').objects[0].max)],['Оборудование и товар',`до ${MLN(sec('prop').objects[1].max)}`]])}
       </div>
     </section>
@@ -1952,30 +1843,17 @@ function sfaCheckout(){
     </div>
   </div>`);
 }
-function sfaDone(){
-  const paper = S.signway==='paper';
-  return sfaShell(`<div class="page">
-    ${paper
-      ? elDone('Согласие на поручения', 'Демонстрация бумажного подписания. Документы не формируются и не отправляются',
-          `<div class="policy"><div class="policy__hd"><div class="t-h3">${CLIENT.name}</div><div class="t-sm sec">Стоимость ${RUB(calc().premium)} в год</div></div>
-            <div><span class="status status--24">Согласие ожидает подписи клиента</span></div>
-            <div class="done__steps">${elStepList(['Передайте согласие клиенту','Клиент подписывает согласие на поручения','Сохраните подписанное согласие в карточке сделки'], 0)}</div>
-
-            ${elDocs()}</div>`, 'К продуктам клиента')
-      : elDone('Демонстрация подписи завершена', 'Показано подписание согласия на поручения. Реальные документы не подписаны, полис не оформлен, деньги не списаны', elPolicy() + elAfter(), 'К продуктам клиента')}
-  </div>`);
-}
-
 /* ═══════════ ЧЕРНОВИК ══════════════════════════════════════════
    Оформление переживает перезагрузку и «назад» браузера. Только вкладка
    (sessionStorage); согласие и подпись после восстановления даются заново. */
 const DRAFT_KEY = 'alfa360-draft';
-const DRAFT_FIELDS = ['channel','step','flow','singleModule','sel','staff','estimateEmployees','staffPending','addresses','propertyOwnership','productVersion','payAccount','payMail','signway'];
+const DRAFT_FIELDS = ['channel','step','flow','singleModule','sel','staff','estimateEmployees','staffListStarted','staffPending','addresses','propertyOwnership','productVersion','payAccount','payMail','signway'];
 const store = () => { try { return typeof sessionStorage!=='undefined' ? sessionStorage : null; } catch { return null; } };
 function loadDraft(){
   try {
     const d=JSON.parse(store()?.getItem(DRAFT_KEY) || 'null');
     if(!d || !['config','details','checkout'].includes(d.step)) return null;
+    if(Array.isArray(d.staff)&&d.staff.some(p=>p.on&&staffFull(p)))d.staffListStarted=true;
     if(d.productVersion!==SCHEMA.version){d.productVersion=SCHEMA.version;d.step='config';d.warn='Условия продукта обновились. Проверьте состав и новую стоимость до продолжения';}
     if(d.sel?.prop?.on && d.propertyOwnership!=='owned'){d.step='config';d.expandedModule='prop';}
     // Старый черновик мог остановиться до ввода адреса на прежнем втором шаге.
@@ -2023,26 +1901,187 @@ function syncHistory(){
   } catch {}
 }
 function closeLayers(){
-  Object.assign(S, {panel:null, consent:false, mismatch:false, managerReq:false, explain:null, staffDelete:null, staffMenu:null, warn:null});
+  Object.assign(S, {panel:null, demoPanel:false, consent:false, mismatch:false, managerReq:false, explain:null, staffDelete:null, staffMenu:null});
   if(S.staffEdit!==null){keepStaffDraft();S.staffEdit=null;S.staffDraft=null;S.staffErr=null;}
-  invalidateApproval();
+  S.signing=false;clearInterval(codeTimer);
 }
 
 /* ═══════════ РЕНДЕР ════════════════════════════════════════════ */
 const VIEWS = {
-  nib:{showcase:nibShowcase, config:nibConfig, details:nibDetails, checkout:nibCheckout, done:nibDone},
-  sfa:{showcase:sfaShowcase, config:sfaConfig, details:sfaDetails, checkout:sfaCheckout, done:sfaDone}
+  nib:{showcase:nibShowcase, config:nibConfig, details:nibDetails, checkout:nibCheckout, result:nibDone, done:nibDone},
+  sfa:{showcase:sfaShowcase, config:sfaConfig, details:sfaDetails, checkout:sfaCheckout, result:sfaDone, done:sfaDone}
 };
-const FLOW = ['showcase','config','details','checkout','done'];
+const FLOW = ['showcase','config','details','checkout','result','done'];
+/* v1.3: screen behavior and explicitly simulated operations. No external payment/signature calls. */
+const DEMO_SCENARIOS=[['success','Оформление без ошибок'],['staff-less','Сотрудников меньше оценки'],['staff-more','Сотрудников больше оценки'],['rental','Помещение в аренде'],['code-expired','Код подписи истёк'],['sign-failed','Ошибка подтверждения подписи'],['payment-unknown','Оплата: результат неизвестен'],['payment-failed','Оплата не выполнена'],['issue-failed','Оформление требует проверки'],['file-preparing','Полис оформлен, файл готовится'],['file-failed','Не удалось получить файл'],['manager-failed','Ошибка заявки менеджеру']];
+const OP_KEY='alfa360-operation-v13', CATALOG_KEY='alfa360-catalog-demo';
+function localBusinessDate(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());return ['year','month','day'].map(t=>parts.find(p=>p.type===t).value).join('-');}
+let operationSerial=0, operationTimer=null, priceTimer=null, priceSerial=0, managerTimer=null, managerSerial=0;
+const staffMismatchKey=()=>JSON.stringify({estimate:S.estimateEmployees,count:EMPN(),price:calc().premium,selection:S.sel});
+const staffMismatchNeeded=()=>S.sel.dms.on && S.estimateEmployees>0 && EMPN()>0 && S.estimateEmployees!==EMPN() && S.mismatchOk!==staffMismatchKey();
+const operationLocked=(op=S.operation)=>!!op && (op.signature==='pending'||op.payment==='pending'||op.payment==='unknown'||(op.payment==='confirmed'&&op.issuance!=='issued'));
+function snapshotConfiguration(){return structuredClone({key:quoteKey(),productVersion:SCHEMA.version,catalog:SCHEMA,channel:S.channel,client:CLIENT,sel:S.sel,ownership:S.propertyOwnership,address:S.addresses[0].addr,staff:S.staff.filter(p=>p.on&&staffFull(p)),employeeCount:EMPN(),account:S.payAccount,accountLabel:ACC(),email:S.payMail.trim(),signway:S.signway,calc:calc()});}
+function newMockOperation(snapshot,scenario='success'){const id='DEMO-'+Date.now().toString(36)+'-'+(++operationSerial);return {id,snapshot:structuredClone(snapshot),scenario,signature:'pending',payment:'not_started',issuance:'not_started',file:'not_started',paymentAttempts:0,signatureAttempts:1,paymentDate:null,createdAt:new Date().toISOString(),flags:{},revision:1};}
+function advanceMockOperation(op){
+ if(op.signature==='pending'){
+  if(op.scenario==='sign-failed'&&!op.flags.signatureChecked){op.signature='failed';return op;}
+  op.signature='confirmed';op.payment='pending';op.paymentAttempts=1;return op;
+ }
+ if(op.payment==='pending'){
+  if(op.scenario==='payment-unknown'&&!op.flags.paymentChecked){op.payment='unknown';return op;}
+  if(op.scenario==='payment-failed'&&!op.flags.paymentChecked){op.payment='failed';return op;}
+  op.payment='confirmed';op.paymentDate=localBusinessDate();op.issuance='pending';return op;
+ }
+ if(op.issuance==='pending'){
+  if(op.scenario==='issue-failed'&&!op.flags.issueChecked){op.issuance='failed';return op;}
+  op.issuance='issued';op.file='preparing';return op;
+ }
+ if(op.file==='preparing'){
+  if(op.scenario==='file-preparing'&&!op.flags.fileChecked)return op;
+  if(op.scenario==='file-failed'&&!op.flags.fileChecked){op.file='failed';return op;}
+  op.file='ready';return op;
+ }
+ return op;
+}
+function checkMockOperation(op){
+ if(op.signature==='failed'){op.flags.signatureChecked=true;op.signature='pending';op.signatureAttempts++;}
+ else if(op.payment==='unknown'){op.flags.paymentChecked=true;op.payment='pending';}
+ else if(op.issuance==='failed'){op.flags.issueChecked=true;op.issuance='pending';}
+ else if(op.file==='failed'||op.file==='preparing'){op.flags.fileChecked=true;op.file='preparing';}
+ return op;
+}
+function persistOperation(){try{if(S.operation)store()?.setItem(OP_KEY,JSON.stringify(S.operation));else store()?.removeItem(OP_KEY);}catch{}}
+function loadOperation(){try{const op=JSON.parse(store()?.getItem(OP_KEY)||'null');return op&&op.id?.startsWith('DEMO-')&&op.snapshot?.calc&&op.snapshot?.catalog&&['pending','confirmed','failed'].includes(op.signature)?op:null;}catch{return null;}}
+function operationChanged(op){
+ if(S.operation?.id!==op.id)return;
+ if(op.signature==='confirmed'){S.signed=true;S.signBusy=false;S.signing=false;S.step=op.file==='ready'?'done':'result';}
+ else if(op.signature==='failed'){S.signBusy=false;S.signError=true;}
+ if(op.issuance==='issued')S.completedKey=op.snapshot.key;
+ persistOperation();if(typeof render==='function')render();
+}
+function scheduleOperation(){
+ clearTimeout(operationTimer);const op=S.operation;if(!op)return;
+ const pending=op.signature==='pending'||op.payment==='pending'||op.issuance==='pending'||(op.file==='preparing'&&(op.scenario!=='file-preparing'||op.flags.fileChecked));
+ if(!pending)return;
+ const id=op.id;
+ operationTimer=setTimeout(()=>{if(S.operation?.id!==id)return;advanceMockOperation(S.operation);operationChanged(S.operation);scheduleOperation();},650);
+}
+function beginOperation(){
+ if(S.pricingBusy || !S.agreed || S.agreedFor!==quoteKey())return null;
+ if(S.operation&&(operationLocked()||(S.operation.signature==='confirmed'&&S.operation.snapshot.key===quoteKey()&&S.operation.payment!=='failed'))){S.step='result';return S.operation;}
+ if(S.operation?.signature==='failed'&&S.operation.snapshot.key===quoteKey())checkMockOperation(S.operation);
+ else {S.operation=newMockOperation(snapshotConfiguration(),S.demoScenario||'success');if(S.demoPaymentRetry){S.operation.flags.paymentChecked=true;S.demoPaymentRetry=false;}}
+ S.signBusy=true;S.signError=false;clearInterval(codeTimer);persistOperation();scheduleOperation();return S.operation;
+}
+function queueReprice(){
+ if(S.step!=='config')return;const serial=++priceSerial;clearTimeout(priceTimer);S.pricingBusy=true;invalidateApproval();
+ priceTimer=setTimeout(()=>{if(serial!==priceSerial)return;S.pricingBusy=false;if(typeof rerenderKeepScroll==='function')rerenderKeepScroll();},350);
+}
+function priceSummary(c,selection=S.sel,catalog=SCHEMA){
+ return `<div class="cells cells--last">${c.rows.map(r=>{const data=catalog.sections.find(x=>x.id===r.id),sel=selection[r.id];let description='';
+  if(r.id==='prop')description=r.parts.map(p=>`${esc(p.name)}: ${RUB(p.sum)} → ${RUB(p.premium)} в год`).join('<br>');
+  if(r.id==='dms')description=`${r.units} × ${RUB(r.units?r.premium/r.units:0)} за сотрудника в год${sel.opts.includes('dental')?' · со стоматологией':''}`;
+  if(r.id==='liability')description=`Лимит ${RUB(r.insured)}${sel.opts.includes('quality')?`<br>В пределах лимита: ${RUB(r.insured*.25)} · опция ${RUB(r.parts.find(p=>p.id==='quality')?.premium||0)} уже включена в цену`:''}`;
+  return `<div class="cell"><div class="cell__main"><div class="cell__t">${data.name}</div><div class="cell__s">${description}</div></div><div class="cell__r"><b>${RUB(r.premium)}</b><span>в год</span></div></div>`;}).join('')}
+  <div class="cell"><span class="cell__main">Стоимость модулей</span><b>${RUB(c.base)}</b></div>
+  ${c.topup?`<div class="cell"><div class="cell__main"><div class="cell__t">Доплата до минимальной стоимости</div><div class="cell__s">Одна доплата на весь полис</div></div><b>${RUB(c.topup)}</b></div>`:''}
+  <div class="cell"><span class="cell__main">Сумма за год</span><b class="strong">${RUB(c.premium)}</b></div></div>`;
+}
+function elPkgSummary(){return priceSummary(calc());}
+function elMismatchDialog(){
+ if(!S.mismatch)return '';const k=EMPN(),N=S.estimateEmployees,smaller=k<N,c=calc(),before=Math.max(SCHEMA.rules.minPremium,c.base+(N-k)*empRate());
+ const title=smaller?`Застраховать только ${k} из ${N} сотрудников?`:'Подтвердите состав и новую стоимость';
+ const text=smaller?(N-k===1?'Ещё один сотрудник не получит ДМС. Добавить его можно сейчас, на этом шаге':'Не все сотрудники получат ДМС. Можно дополнить список сейчас'):`Список сотрудников изменился. Стоимость стала ${RUB(c.premium)} в год`;
+ return dlg500('mm-t',title,`<p class="t-md">${text}</p><div class="tv"><div class="tv__row"><span class="tv__k">Предварительно за ${N}</span><b>${RUB(before)} в год</b></div><div class="tv__row"><span class="tv__k">За выбранных ${k}</span><b>${RUB(c.premium)} в год</b></div></div>`,`<button type="button" class="btn btn--48 ${PRI()}" data-act="mismatch-ok">${smaller?`Продолжить с ${k}`:'Подтвердить состав и стоимость'}</button><button type="button" class="btn btn--48 btn--secondary" data-act="mismatch-add">${smaller?'Добавить остальных':'Изменить список'}</button>`,'mismatch-close');
+}
+function elPolicy(){
+ const op=['result','done'].includes(S.step)?S.operation:null,snap=op?.snapshot||snapshotConfiguration(),c=snap.calc,catalog=snap.catalog;
+ const head=`<div class="policy__hd"><div class="t-h3">${esc(catalog.title)}</div><p class="t-sm sec">Заглушка единого полиса для ${esc(snap.client.name)}. Не является действующим полисом</p></div><div class="tv"><div class="tv__row"><span>Начало защиты</span><b>${op?.paymentDate?new Intl.DateTimeFormat('ru-RU').format(new Date(op.paymentDate+'T12:00:00')):'Дата подтверждённой оплаты'}</b></div><div class="tv__row"><span>Срок</span><b>1 год с даты оплаты</b></div></div>`;
+ const body=c.rows.map(r=>{const s=catalog.sections.find(x=>x.id===r.id),sel=snap.sel[r.id];let content='';
+  if(r.id==='prop')content=`<p>Помещение в собственности страхователя — ИП или юридического лица</p><p>${esc(snap.address)}</p><div class="tv">${r.parts.map(p=>`<div class="tv__row"><span>${esc(p.name)}</span><span>${RUB(p.sum)}<small> · ${RUB(p.premium)} в год</small></span></div>`).join('')}</div><p>${coverageItems(s).map(esc).join('; ')}</p>${sel.opts.includes('ext')?'<p><b>Расширенная выплата:</b> первый риск, без учёта износа, с восстановлением страховой суммы</p>':''}`;
+  if(r.id==='dms')content=`<p>Программа «Классика». ${EMP(r.units)}, от 18 до 65 лет включительно. Приёмы без ограничения числа посещений в рамках программы; исследования по назначению.</p><ul>${snap.staff.map(p=>`<li>${esc(p.fio)} · ${esc(p.dob)}</li>`).join('')}</ul>${sel.opts.includes('dental')?'<p><b>Стоматология подключена.</b> Помощь по программе ДМС без ограничения числа посещений, +12 000 ₽ за сотрудника в год.</p>':''}`;
+  if(r.id==='liability')content=`<p>Основной лимит: ${RUB(r.insured)}</p><p>${coverageItems(s).map(esc).join('; ')}</p>${sel.opts.includes('quality')?`<p><b>Вред из-за недостатков товаров, работ или услуг:</b> до ${RUB(r.insured*.25)} в пределах общего лимита. Премия опции ${RUB(r.parts.find(p=>p.id==='quality').premium)} уже включена в премию модуля.</p>`:''}`;
+  return `<section class="psec" data-policy-module="${r.id}"><h4>${s.name} · ${RUB(r.premium)} в год</h4>${content}</section>`;
+ }).join('');
+ return `<article class="policy" data-policy-template="one-modular-policy">${head}${body}<div class="sum">${c.topup?`<div class="srow"><span>Доплата до минимальной стоимости</span><b>${RUB(c.topup)}</b></div>`:''}<div class="srow"><span>Сумма за год</span><b>${RUB(c.premium)}</b></div></div><p class="t-sm sec">Это макет. Номер действующего договора не присваивается; реальные оплата и страховая защита не возникают.</p></article>`;
+}
+function buildReconciliation(op,kind='daily'){
+ if(!op||op.payment!=='confirmed'||op.issuance!=='issued')throw Error('Полис ещё не оформлен в демонстрации');
+ const s=op.snapshot,c=s.calc,baseCommission=c.rows.reduce((a,r)=>a+r.bank,0),id=op.id;
+ const modules=c.rows.map(r=>{const cat=s.catalog.sections.find(x=>x.id===r.id),sel=s.sel[r.id];const m={policyId:id,id:id+'-'+r.id,code:r.id,premium:r.premium,commissionRate:r.kv,commission:r.bank,options:[]};
+  if(r.id==='prop'){m.address=s.address;m.ownership=s.ownership;m.objects=r.parts.map(p=>({code:p.id,insuredSum:p.sum,tariff:p.rate,factor:sel.opts.includes('ext')?cat.options.find(o=>o.id==='ext').k:1,premium:p.premium}));if(sel.opts.includes('ext'))m.options.push({code:'ext',factor:cat.options.find(o=>o.id==='ext').k,premiumIncluded:true});}
+  if(r.id==='liability'){m.limit=sel.limit;m.tariff=cat.bands[0][1];m.basePremium=r.parts[0].premium;if(sel.opts.includes('quality'))m.options.push({code:'quality',sublimitShare:cat.options.find(o=>o.id==='quality').sublimit,sublimit:r.parts.find(p=>p.id==='quality').sum,tariff:cat.options.find(o=>o.id==='quality').rate,premium:r.parts.find(p=>p.id==='quality').premium,premiumIncluded:true});}
+  if(r.id==='dms'){m.program=sel.program;m.employeeCount=s.employeeCount;m.basePricePerEmployee=cat.programs.find(p=>p.id===sel.program).price;m.dental=sel.opts.includes('dental');m.dentalPricePerEmployee=m.dental?cat.options.find(o=>o.id==='dental').perEmp:0;m.employeeList={id:id+'-employees',version:1,employeeIds:s.staff.map((_,i)=>id+'-employee-'+(i+1))};if(m.dental)m.options.push({code:'dental',pricePerEmployee:m.dentalPricePerEmployee,premiumIncluded:true});}
+  return m;
+ });
+ return {demo:true,register:{id:id+'-'+kind,type:kind,period:{from:op.paymentDate,to:op.paymentDate},version:1,formedAt:op.createdAt,policyCount:1,status:'prepared'},policy:{id,number:null,saleId:id,insurerPolicyNumber:null,clientId:s.client.inn,clientName:s.client.name,clientType:'LEGAL_ENTITY',channel:s.channel,product:'business-protection',productVersion:s.productVersion,selectedModules:modules.map(m=>m.code),issued:true,paymentDate:op.paymentDate,coverageStart:op.paymentDate,termYears:1,basePremium:c.base,minimumTopup:c.topup,totalPremium:c.premium,currency:'RUB',commissionModules:baseCommission,commissionOnTopup:c.bank-baseCommission,commissionTotal:c.bank,commissionReady:true},modules,payment:{id:id+'-payment',policyId:id,status:'confirmed',amount:c.premium,date:op.paymentDate,attempts:op.paymentAttempts,insurerTransfer:'not_confirmed'},correction:{version:1,previousRecord:null,reason:'original',changes:[]},controls:{uniquePolicies:1,basePremium:c.base,minimumTopup:c.topup,totalPremium:c.premium,paymentConfirmed:c.premium,commission:c.bank},reconciliation:{status:'not_reconciled',commissionPayout:'not_confirmed'}};
+}
+function elReconciliation(){
+ const op=S.operation;if(S.channel!=='sfa'||op?.issuance!=='issued')return '';const r=buildReconciliation(op);
+ return `<section class="block"><details><summary class="t-h3">Данные для сверки</summary><p class="t-sm sec">Пример одной записи модульного полиса. Подготовка и выгрузка не означают отправку, успешную сверку или выплату КВ.</p><div class="tv">${r.modules.map(m=>`<div class="tv__row"><span>${op.snapshot.catalog.sections.find(s=>s.id===m.code).name}</span><span>${RUB(m.premium)} · КВ ${RUB(m.commission)}</span></div>`).join('')}<div class="tv__row"><span>Доплата до минимума</span><b>${RUB(r.policy.minimumTopup)}</b></div><div class="tv__row"><span>Сумма за год</span><b>${RUB(r.policy.totalPremium)}</b></div><div class="tv__row"><span>Итог КВ</span><b>${RUB(r.policy.commissionTotal)}</b></div></div><p>Один полис и один платёж. Сублимиты и премии опций уже учтены в родительских модулях; контакты сотрудников в финансовую сверку не копируются.</p><button class="btn btn--48 btn--secondary" data-act="export-register">Скачать пример записи</button><p class="t-sm sec">Статус: подготовлено. Сверка и выплата КВ не подтверждены.</p></details></section>`;
+}
+function elOperationResult(){
+ const op=S.operation;if(!op)return elDone('Демонстрация подписи завершена','Реальные документы не подписаны, полис не оформлен, деньги не списаны','',S.channel==='sfa'?'К продуктам клиента':'К страховкам');
+ let title,text,action='operation-check',label='Проверить результат',busy=false;
+ if(op.signature==='failed'){title='Не удалось подтвердить подпись';text='Согласие не подписано. Попробуйте ещё раз';action='operation-retry-sign';label='Повторить подписание';}
+ else if(op.signature==='pending'){title='Проверяем подпись';text='Дождитесь результата подтверждения согласия на поручения';busy=true;}
+ else if(op.payment==='unknown'){title='Проверяем оплату';text='Проверяем оплату. Пока результат не подтверждён, повторно оплачивать не нужно';}
+ else if(op.payment==='failed'){title='Оплата не выполнена';text='Деньги не списаны. Проверьте счёт и повторите оформление';action='operation-edit';label='Изменить счёт';}
+ else if(op.payment==='pending'){title='Проверяем оплату';text='Ожидаем подтверждение оплаты';busy=true;}
+ else if(op.issuance==='failed'){title='Проверяем оформление';text='Оплата подтверждена. Результат оформления пока не получен. Повторно оплачивать не нужно';label='Проверить оформление';}
+ else if(op.issuance==='pending'){title='Оформляем полис';text='Оплата подтверждена. Оформляем полис';busy=true;}
+ else if(op.file==='preparing'){title='Полис оформлен';text='Полис оформлен. Файл ещё готовится';label='Проверить готовность файла';}
+ else if(op.file==='failed'){title='Не удалось получить файл полиса';text='Полис оформлен. Повторите получение файла; оплачивать заново не нужно';label='Получить файл повторно';}
+ else {title='Полис оформлен';text=`Полис оформлен. Защита действует с ${new Intl.DateTimeFormat('ru-RU').format(new Date(op.paymentDate+'T12:00:00'))}`;action='doc';label='Открыть полис';}
+ return `<div class="done"><section class="done__card" aria-live="polite" aria-atomic="true"><div class="status status--24">Демонстрация · деньги не списываются</div><h1 class="t-h2">${title}</h1><p>${text}</p><div class="actions"><button type="button" class="btn btn--48 ${PRI()}" data-act="${action}" data-v="policy" ${busy?'disabled aria-busy="true"':''}>${busy?'Ожидаем результат…':label}</button>${!operationLocked()?`<button class="btn btn--48 btn--secondary" data-act="new-quote">${S.channel==='sfa'?'К продуктам клиента':'К страховкам'}</button>`:''}</div><p class="t-sm sec">Это демонстрация сценария. Полис остаётся макетом, реальные подпись, платёж и страховая защита не возникают.</p></section><section class="block"><h2 class="t-h3">Состав и стоимость</h2>${priceSummary(op.snapshot.calc,op.snapshot.sel,op.snapshot.catalog)}</section>${elReconciliation()}</div>`;
+}
+function nibDone(){return nibShell(`<div class="page">${elOperationResult()}</div>`);}
+function sfaDone(){return sfaShell(`<div class="page">${elOperationResult()}</div>`);}
+function elCodeDialog(){
+ if(!S.signing)return '';const expired=S.codeExpired||(S.codeExpiresAt&&Date.now()>=S.codeExpiresAt),out=S.codeTries<=0,error=expired||out||S.codeWrong||S.signError;
+ const message=expired?'Срок действия кода истёк. Запросите новый код':out?'Попытки закончились. Запросите новый код':S.signError?'Не удалось подтвердить подпись. Попробуйте ещё раз':'Код не подходит. Проверьте его и попробуйте ещё раз';
+ return `<div class="dlg__scrim" data-act="code-close"><div class="dlg dlg--600 dlg--code" role="dialog" aria-modal="true" aria-labelledby="dlg-t"><div class="dlg__hd"><button class="dlg__x" data-act="code-close" aria-label="Закрыть">${SVG_X}</button></div><div class="dlg__body"><h3 id="dlg-t" tabindex="-1">Подписание согласия на поручения</h3><p class="code__to">Для демонстрации подписи введите <b>12345</b>. Уведомление не отправляется, деньги не списываются.</p><div class="code${error?' code--err':''}"><div class="code__cells" role="group" aria-label="Демонстрационный код, 5 цифр">${codeDigits().map((d,i)=>`<input class="code__cell" id="${i?'code-in-'+i:'code-in'}" data-act="code-cell" data-i="${i}" value="${esc(d)}" inputmode="numeric" pattern="[0-9]*" aria-label="Цифра ${i+1}" autocomplete="${i?'off':'one-time-code'}" ${expired||out||S.signBusy?'disabled':''} ${error?'aria-invalid="true" aria-describedby="code-err"':''}>`).join('')}</div></div>${error?`<p class="code__err" id="code-err" role="alert" tabindex="-1">${message}</p>`:''}${S.signBusy?'<p role="status">Проверяем подпись…</p>':''}<div class="code__more">${S.codeLeft>0&&!expired&&!out?`<p class="sec">Новый код можно запросить через <span id="code-timer">${mmss(S.codeLeft)}</span></p>`:`<button class="lnk" id="code-resend" data-act="code-resend" ${S.signBusy?'disabled':''}>Запросить новый код</button>`}<button class="lnk lnk--pseudo" id="code-help-btn" data-act="code-help" aria-expanded="${S.codeHelp}">Как пройти демо?</button></div>${S.codeHelp?'<p id="code-help">Код 12345 подтверждает подпись в демонстрации. Другой код показывает ошибку. Реальных уведомлений и списаний нет.</p>':''}</div></div></div>`;
+}
+function signCode(){
+ if(S.signBusy||!S.signing||S.step!=='checkout')return;if(!checkoutReady())return;refreshApproval();if(!S.agreed){S.agreeErr=true;rerenderKeepScroll();return;}
+ if(S.codeExpired||Date.now()>=S.codeExpiresAt){S.codeExpired=true;rerenderKeepScroll();return;}
+ if(S.codeTries<=0||S.code.length!==CODE_LEN)return;
+ if(S.code!=='12345'){S.codeTries--;S.codeWrong=true;S.code='';S.codeArr=[];rerenderKeepScroll();(app.querySelector('#code-in:not(:disabled)')||app.querySelector('#code-resend'))?.focus();return;}
+ beginOperation();rerenderKeepScroll();
+}
+function startCode(fresh=true){
+ if(fresh){Object.assign(S,{code:'',codeArr:[],codeLeft:30,codeTries:3,codeWrong:false,signError:false,codeExpired:false,codeSentAt:Date.now(),codeExpiresAt:Date.now()+120000,codeSession:true});if(S.demoScenario==='code-expired'&&!S.demoExpiryConsumed){S.codeExpiresAt=Date.now()-1;S.codeExpired=true;S.codeLeft=0;S.demoExpiryConsumed=true;}}
+ clearInterval(codeTimer);codeTimer=setInterval(()=>{if(!S.signing||S.signBusy){clearInterval(codeTimer);return;}S.codeLeft=Math.max(0,30-Math.floor((Date.now()-S.codeSentAt)/1000));if(Date.now()>=S.codeExpiresAt){S.codeExpired=true;clearInterval(codeTimer);rerenderKeepScroll();(app.querySelector('#code-resend'))?.focus();return;}const timer=document.getElementById('code-timer');if(timer)timer.textContent=mmss(S.codeLeft);if(!S.codeLeft)rerenderKeepScroll();},1000);
+}
+function elConsentDialog(){
+ if(!S.consent)return '';return `<div class="dlg__scrim" data-act="consent-close"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cns-t"><div class="dlg__hd"><h3 id="cns-t" tabindex="-1">Согласие на поручения</h3><button class="dlg__x" data-act="consent-close" aria-label="Закрыть">${SVG_X}</button></div><div class="dlg__body">${S.paperPrepared?'<p class="status">Макет согласия подготовлен для подписи на бумаге</p>':''}<p>Это мокап документа; юридический текст будет добавлен позже.</p><p>Стоимость выбранной страховки: ${RUB(calc().premium)} за год, счёт ${ACC()}.</p>${S.paperPrepared?'<p>Подготовка макета не подтверждает подпись клиента и не запускает оплату.</p>':''}</div><div class="dlg__ft">${S.paperPrepared?`<button class="btn btn--48 ${PRI()}" data-act="paper-confirm-demo">Показать подтверждение подписи (демо)</button>`:''}<button class="btn btn--48 btn--secondary" data-act="consent-close">Понятно</button></div></div></div>`;
+}
+function elManagerDialog(){
+ if(!S.managerReq)return '';const state=S.managerState||'idle',busy=state==='pending';return dlg500('mgr-t','Заявка менеджеру',`<p>Менеджер поможет подобрать защиту, если условия пакета не подходят.</p><p class="t-sm sec">В прототипе заявка не отправляется.</p>${state==='failed'?'<p class="field__err" role="alert">Не удалось показать подтверждение заявки. Попробуйте ещё раз</p>':state==='success'?'<p role="status">Заявка принята в демонстрации. Реальная заявка не отправлялась.</p>':''}`,`${state!=='success'?`<button class="btn btn--48 ${PRI()}" data-act="manager-submit" ${busy?'disabled aria-busy="true"':''}>${busy?'Проверяем…':state==='failed'?'Повторить':'Показать отправку заявки (демо)'}</button>`:''}<button class="btn btn--48 btn--secondary" data-act="manager-close">Понятно</button>`,'manager-close');
+}
+function elDemoDialog(){
+ if(!S.demoPanel)return '';return dlg500('demo-t','Сценарии прототипа',`<p>Все операции демонстрационные: реальные документы не подписываются, полис не выпускается, деньги не списываются.</p><div class="field field--select"><label for="demo-scenario">Сценарий следующего оформления</label><select id="demo-scenario" data-act="demo-scenario">${DEMO_SCENARIOS.map(([v,t])=>`<option value="${v}" ${S.demoScenario===v?'selected':''}>${t}</option>`).join('')}</select></div><p class="t-sm sec">Демопример заменит введённые данные примером с полным списком. Выбранный сценарий также можно пройти со своими данными.</p>`,`<button class="btn btn--48 ${PRI()}" data-act="demo-example">Открыть демопример</button><button class="btn btn--48 btn--secondary" data-act="demo-close">Продолжить с моими данными</button><button class="lnk" data-act="demo-catalog">Показать изменение условий каталога</button>`,'demo-close');
+}
+function openDemoExample(){
+ const channel=S.channel,scenario=S.demoScenario||'success';clearTimeout(managerTimer);managerSerial++;clearTimeout(operationTimer);clearTimeout(priceTimer);clearInterval(codeTimer);operationSerial++;Object.assign(S,structuredClone(START),{channel,demoScenario:scenario,step:'checkout',propertyOwnership:'owned',estimateEmployees:1});
+ S.addresses=[{addr:'Москва, улица Лесная, дом 5, помещение 12'}];S.staff=[{on:true,fio:'Иванов Иван Иванович',dob:'10.10.1990',phone:'+7 999 000 00 01',email:'employee@example.com'}];S.payMail='policy@example.com';S.staffListStarted=true;
+ if(scenario==='staff-less'){S.estimateEmployees=2;S.step='details';}
+ if(scenario==='staff-more'){S.staff.push({on:true,fio:'Петров Пётр Петрович',dob:'15.06.1988',phone:'+7 999 000 00 02',email:'employee2@example.com'});S.step='details';}
+ if(scenario==='rental'){S.propertyOwnership='rented';S.step='config';}
+ if(scenario==='manager-failed'){S.step='config';S.managerReq=true;}
+ persistOperation();dropDraft();render();window.scrollTo(0,0);
+}
+function downloadRegistry(){if(S.channel!=='sfa'||S.operation?.issuance!=='issued')return;const data=buildReconciliation(S.operation);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='modular-reconciliation-demo.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+
 const app = document.getElementById('app');
 const live = document.getElementById('live');
 /* Верхний слой поверх страницы: диалог согласия → диалог ПЭП → боковая панель.
    При открытии фокус уходит в заголовок слоя, при закрытии — на кнопку, открывшую его. */
-const layer = () => S.consent ? 'consent' : S.mismatch ? 'mismatch' : S.managerReq ? 'manager' : S.explain ? 'explain' : S.staffDelete!=null ? 'staff-del'
+const layer = () => S.demoPanel ? 'demo' : S.consent ? 'consent' : S.mismatch ? 'mismatch' : S.managerReq ? 'manager' : S.explain ? 'explain' : S.staffDelete!=null ? 'staff-del'
   : (S.signing && S.step==='checkout') ? 'code' : S.staffEdit!==null && S.staffDraft ? 'staff' : S.panel ? 'panel:'+S.panel : null;
 /* Окно кода открывается с кареткой в первой ячейке, как CodeInput в приложении */
-const LAYER_TITLE = {consent:'#cns-t', code:'#code-in', staff:'#stf-t', mismatch:'#mm-t', manager:'#mgr-t', explain:'#exp-t', 'staff-del':'#sdel-t'};
-const layerOpener = l => l==='consent' ? '[data-act="consent"]' : l==='code' ? '[data-act="start-sign"]' : l==='staff' || l==='staff-del' ? '[data-act="staff-add"]'
+const LAYER_TITLE = {demo:'#demo-t',consent:'#cns-t', code:'#code-in', staff:'#stf-t', mismatch:'#mm-t', manager:'#mgr-t', explain:'#exp-t', 'staff-del':'#sdel-t'};
+const layerOpener = l => l==='demo' ? '[data-act="demo-open"]' : l==='consent' ? '[data-act="consent"]' : l==='code' ? '[data-act="start-sign"]' : l==='staff' || l==='staff-del' ? '[data-act="staff-add"]'
   : l==='mismatch' ? '[data-act="go"][data-v="checkout"]' : l==='manager' ? '[data-act="manager-request"]' : l==='explain' ? '[data-act="terms-explain"]'
   : l==='panel:terms' ? '[data-act="terms"]' : l.startsWith('panel:doc:') ? `[data-act="doc"][data-v="${l.slice(10)}"]` : `[data-act="panel"][data-v="${l.slice(6)}"]`;
 let lastLayer = null;
@@ -2090,6 +2129,8 @@ function morphNode(a, b){
   if(a.tagName==='SELECT'){ const i=[...a.options].findIndex(o=>o.hasAttribute('selected')); if(i>=0 && a.selectedIndex!==i) a.selectedIndex = i; }
 }
 function render(){
+  if(S.operation?.payment==='confirmed'&&!['result','done'].includes(S.step))S.step=S.operation.file==='ready'?'done':'result';
+  if(operationLocked()&&!['checkout','result'].includes(S.step))S.step='result';
   refreshApproval();
   const tpl = document.createElement('template');
   tpl.innerHTML = VIEWS[S.channel][S.step]();
@@ -2132,8 +2173,22 @@ app.addEventListener('click', e=>{
   if(S.staffMenu!=null && !e.target.closest?.('.menu, [data-act="staff-menu"]')){ S.staffMenu=null; if(!t) { rerenderKeepScroll(); return; } }
   if(!t || t.disabled) return;
   const act = t.dataset.act, v = t.dataset.v;
+  if(act==='demo-open'){S.demoPanel=true;rerenderKeepScroll();return;}
+  if(act==='demo-close'){if(t.classList.contains('dlg__scrim')&&e.target!==t)return;S.demoPanel=false;rerenderKeepScroll();return;}
+  if(act==='demo-example'){openDemoExample();return;}
+  if(act==='demo-catalog'){if(operationLocked()){S.demoPanel=false;S.step='result';render();return;}SCHEMA.version=SCHEMA.version.endsWith('-demo2')?'2026-11-10-v1':'2026-11-10-v1-demo2';try{store()?.setItem(CATALOG_KEY,SCHEMA.version);}catch{}invalidateApproval();S.demoPanel=false;S.warn='Условия продукта обновились. Проверьте состав и новую стоимость до продолжения';S.step='config';queueReprice();render();return;}
+  if(act==='paper-confirm-demo'){if(S.paperPrepared&&S.agreed&&S.agreedFor===quoteKey()&&checkoutReady()){S.consent=false;beginOperation();S.step='result';render();}return;}
+  if(act==='operation-check'){if(S.operation){checkMockOperation(S.operation);persistOperation();scheduleOperation();render();}return;}
+  if(act==='operation-retry-sign'){if(operationLocked())return;S.step='checkout';S.signed=false;S.signBusy=false;S.signing=false;if(S.agreed&&S.agreedFor===quoteKey()){S.signing=true;startCode(true);}else S.agreeErr=true;render();if(!S.signing)app.querySelector('[data-act="agree"]')?.focus();return;}
+  if(act==='operation-edit'){if(operationLocked())return;clearTimeout(operationTimer);S.operation=null;S.demoPaymentRetry=true;S.step='details';invalidateApproval();persistOperation();render();return;}
+  if(act==='new-quote'){if(operationLocked())return;const channel=S.channel,scenario=S.demoScenario;clearTimeout(managerTimer);managerSerial++;clearTimeout(operationTimer);clearInterval(codeTimer);S=structuredClone(START);S.channel=channel;S.demoScenario=scenario;persistOperation();dropDraft();render();return;}
+  if(act==='edit-staff'){if(operationLocked()||S.pricingBusy)return;const [module,message]=configCheck(true);if(message){S.showErrors=true;S.expandedModule=module;live.textContent=message;rerenderKeepScroll();focusRouteProblem({step:'config',message});return;}S.step='details';S.expandedModule=null;render();window.scrollTo(0,0);app.querySelector('[data-act="staff-add"]')?.focus({preventScroll:true});return;}
+  if(act==='export-register'){downloadRegistry();return;}
+  if(act==='manager-submit'){if(S.managerState==='pending'||S.managerState==='success')return;const generation=++managerSerial,owner=S,fail=S.demoScenario==='manager-failed'&&!S.managerRetried;S.managerState='pending';rerenderKeepScroll();clearTimeout(managerTimer);managerTimer=setTimeout(()=>{if(generation!==managerSerial||S!==owner)return;S.managerState=fail?'failed':'success';S.managerRetried=true;if(S.managerReq)rerenderKeepScroll();},600);return;}
+  if(operationLocked()&&['go','back','preset','preset-go','section','remove-property','single','package-open','calculator','draft-resume'].includes(act)){S.step='result';S.signing=false;render();return;}
   if(act==='go'){
     if(v==='details'){
+      if(S.pricingBusy)return;
       const block=configBlock();
       if(block){ live.textContent=block; S.showErrors=true; const bad=badModule(); if(bad && S.sel[bad].on) S.expandedModule=bad; rerenderKeepScroll();
         (app.querySelector('[aria-invalid="true"]')||app.querySelector('#estimate-employees')||app.querySelector('[data-act="module-input"]'))?.focus(); return; }
@@ -2149,22 +2204,23 @@ app.addEventListener('click', e=>{
         return;
       }
       /* Застрахованных меньше, чем указано на первом шаге, — спросить, а не менять цену молча */
-      if(S.sel.dms.on && S.estimateEmployees && EMPN() < S.estimateEmployees && S.mismatchOk!==EMPN()){ S.mismatch=true; rerenderKeepScroll(); return; }
+      if(staffMismatchNeeded()){ S.mismatch=true; rerenderKeepScroll(); return; }
     }
     S.step = v; S.panel=null; S.codeSession=false; S.agreeErr=false;
-    if(v==='showcase'){invalidateApproval();S.completedKey=null;S.signway='pep';dropDraft();}
+    if(v==='showcase'){S.completedKey=null;S.signway='pep';}
     S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'});
   }
   else if(act==='back'){
-    invalidateApproval();S.completedKey=null;S.agreeErr=false;
+    if(operationLocked()){S.step='result';S.signing=false;render();return;}
+    S.agreeErr=false;
     /* Есть запись в истории — «Назад» в шапке и «назад» браузера ведут в одно место */
     if(histIdx > 0 && typeof history!=='undefined'){ history.back(); return; }
     const i=FLOW.indexOf(S.step); S.step=FLOW[Math.max(0,i-1)]; render();
   }
-  else if(act==='mismatch-ok'){ S.mismatchOk=EMPN(); S.mismatch=false; S.step='checkout'; render(); window.scrollTo({top:0,behavior:'smooth'}); }
-  else if(act==='mismatch-add'){ S.mismatch=false; lastLayer=null; rerenderKeepScroll(); app.querySelector('[data-act="staff-add"]')?.focus(); }
+  else if(act==='mismatch-ok'){ S.mismatchOk=staffMismatchKey(); S.mismatch=false; S.step='checkout'; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  else if(act==='mismatch-add'){ const smaller=EMPN()<S.estimateEmployees;S.mismatch=false;lastLayer=null;rerenderKeepScroll();app.querySelector(smaller?'[data-act="staff-add"]':'[data-act="staff-menu"]')?.focus(); }
   else if(act==='mismatch-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.mismatch=false; rerenderKeepScroll(); }
-  else if(act==='manager-request'){ S.managerReq=true; rerenderKeepScroll(); }
+  else if(act==='manager-request'){S.managerReq=true;if(!S.managerState)S.managerState='idle';rerenderKeepScroll();}
   else if(act==='manager-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.managerReq=false; rerenderKeepScroll(); }
   else if(act==='terms-explain'){ S.explain=v; rerenderKeepScroll(); }
   else if(act==='explain-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.explain=null; rerenderKeepScroll(); }
@@ -2181,7 +2237,7 @@ app.addEventListener('click', e=>{
       SCHEMA.sections.forEach(s=>{S.sel[s.id].on=s.id===v;});S.flow='single';S.singleModule=v;
     }
     S.expandedModule=v;S.panel=null;S.step='config';
-    S.warn=v==='liability'&&!liabilityAllowed()?'Добавьте защиту имущества или ДМС: ответственность оформляется вместе с одним из этих видов защиты':null;
+    S.warn=v==='liability'&&!liabilityAllowed()?'Добавьте имущество или ДМС: ответственность нельзя оформить отдельно':null;
     render();window.scrollTo({top:0,behavior:'smooth'});
   }
   else if(act==='faq-category'){ S.faqId=v; rerenderKeepScroll(); }
@@ -2200,12 +2256,12 @@ app.addEventListener('click', e=>{
     applyPreset(v); S.flow='package'; S.singleModule=null; S.expandedModule=S.sel.prop.on?'prop':null; S.step='config'; S.panel=null; S.warn=null;
     render(); window.scrollTo({top:0,behavior:'smooth'});
   }
-  else if(act==='preset'){ applyPreset(v); rerenderKeepScroll(); }
+  else if(act==='preset'){applyPreset(v);queueReprice();rerenderKeepScroll();}
   else if(act==='emp-step'){
     const max=SCHEMA.rules.maxEmployees, next=S.estimateEmployees+Number(v);
     S.empOver = next > max;
     S.estimateEmployees=Math.max(0,Math.min(max,next));
-    rerenderKeepScroll();
+    queueReprice();rerenderKeepScroll();
   }
   else if(act==='staff-add'){ S.staffEdit='new'; S.staffDraft=S.staffPending || {fio:'',dob:'',phone:'',email:''}; S.staffPending=null; S.staffErr=null; rerenderKeepScroll(); }
   else if(act==='staff-menu'){ S.staffMenu = S.staffMenu===+v ? null : +v; rerenderKeepScroll(); }
@@ -2224,6 +2280,7 @@ app.addEventListener('click', e=>{
     d.email = d.email.trim(); d.dob = d.dob.trim();
     S.staffErr = null;
     const isNew = S.staffEdit==='new';
+    S.staffListStarted=true;
     if(isNew) S.staff.push({...d, on:true});
     else S.staff[S.staffEdit] = {...S.staff[S.staffEdit], ...d, on:true};
     showToast(isNew ? 'Сотрудник добавлен в страховку' : 'Данные сотрудника сохранены');
@@ -2234,15 +2291,17 @@ app.addEventListener('click', e=>{
   else if(act==='staff-del'){ S.staffMenu=null; S.staffDelete=+v; rerenderKeepScroll(); }
   else if(act==='staff-del-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.staffDelete=null; rerenderKeepScroll(); }
   else if(act==='staff-del-ok'){
-    const i=S.staffDelete; S.staffDelete=null; S.staff.splice(i,1); if(S.staffEdit===i){S.staffEdit=null;S.staffDraft=null;}
+    const i=S.staffDelete; S.staffDelete=null; S.staffListStarted=true;S.staff.splice(i,1); if(S.staffEdit===i){S.staffEdit=null;S.staffDraft=null;}
     showToast('Сотрудник удалён'); lastLayer=null; rerenderKeepScroll(); app.querySelector('[data-act="staff-add"]')?.focus();
   }
   else if(act==='signway'){ S.signway = t.value || v; rerenderKeepScroll(); }
   else if(act==='consent'){ S.consent = true; rerenderKeepScroll(); }
   else if(act==='consent-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.consent = false; rerenderKeepScroll(); }
-  else if(act==='code-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; completionSerial++;if(S.signed){S.signed=false;S.codeSession=false;}S.signing=false;clearInterval(codeTimer);rerenderKeepScroll(); }
+  else if(act==='code-close'){if(t.classList.contains('dlg__scrim')&&e.target!==t)return;S.signing=false;clearInterval(codeTimer);if(S.operation)S.step='result';rerenderKeepScroll();}
   else if(act==='agree'){ S.agreed = !S.agreed; S.agreedFor=S.agreed?quoteKey():null; S.agreeErr=false; rerenderKeepScroll(); }
   else if(act==='start-sign'){
+    if(S.operation&&(operationLocked()||S.operation.payment==='confirmed')){S.signing=false;S.step='result';render();return;}
+    if(S.pricingBusy)return;
     if(!checkoutReady()) return;
     refreshApproval();
     if(!S.agreed){
@@ -2253,7 +2312,7 @@ app.addEventListener('click', e=>{
     S.payMailError = VALID.email(S.payMail) || null;
     if(S.payMailError){ rerenderKeepScroll(); app.querySelector('#pay-mail')?.focus(); return; }
     if(S.channel==='sfa' && S.signway==='paper'){
-      S.completedKey=quoteKey();S.step='done';S.signing=false;render();window.scrollTo({top:0,behavior:'smooth'});
+      S.paperPrepared=true;S.consent=true;S.signing=false;rerenderKeepScroll();
     } else { S.signing=true; S.codeHelp=false; startCode(!S.codeSession); rerenderKeepScroll(); }
   }
   else if(act==='sign'){ signCode(); }
@@ -2262,7 +2321,7 @@ app.addEventListener('click', e=>{
 });
 app.addEventListener('input', e=>{
   const slider=e.target.closest('[data-act="sum-slider"]');
-  if(slider){const [sid,key]=slider.dataset.v.split(':'); if(sid==='liability') S.sel.liability.limit=+slider.value; else S.sel.prop.sums[key]=+slider.value; rerenderKeepScroll(); return;}
+  if(slider){const [sid,key]=slider.dataset.v.split(':'); if(sid==='liability') S.sel.liability.limit=+slider.value; else S.sel.prop.sums[key]=+slider.value;queueReprice();rerenderKeepScroll(); return;}
 
   const masked = e.target.closest('[data-mask]');
   let r = null;
@@ -2271,13 +2330,13 @@ app.addEventListener('input', e=>{
   if(money){
     const [sid,key]=money.dataset.v.split(':'), n=+r.digits || 0;
     if(sid==='liability') S.sel.liability.limit=n; else S.sel.prop.sums[key]=n;
-    rerenderKeepScroll();
+    queueReprice();rerenderKeepScroll();
     return;
   }
   const estimate=e.target.closest('[data-act="emp-estimate"]');
   if(estimate){
     S.estimateEmployees=+r.digits || 0; S.empOver=false;
-    rerenderKeepScroll();
+    queueReprice();rerenderKeepScroll();
     return;
   }
   const a = e.target.closest('[data-act="addr"]');
@@ -2324,17 +2383,19 @@ app.addEventListener('input', e=>{
 });
 app.addEventListener('change', e=>{
   const t = e.target.closest('[data-act]'); if(!t) return;
+  if(t.dataset.act==='demo-scenario'){S.demoScenario=t.value;S.demoExpiryConsumed=false;return;}
+  if(operationLocked())return;
   if(t.dataset.act==='module-input'){
     const id=t.dataset.v; S.sel[id].on=t.checked;
     if(t.checked) S.expandedModule=id;
     else if(S.expandedModule===id) S.expandedModule=null;
-    S.warn=null; rerenderKeepScroll(); return;
+    S.warn=null;queueReprice();rerenderKeepScroll();return;
   }
   if(t.dataset.act==='sum-input'){ S.touched[t.id]=true; rerenderKeepScroll(); return; }
   if(t.dataset.act==='opt-input'){
     const [sid,oid]=t.dataset.v.split(':');
     S.sel[sid].opts=t.checked?[...S.sel[sid].opts.filter(x=>x!==oid),oid]:S.sel[sid].opts.filter(x=>x!==oid);
-    S.warn=null; rerenderKeepScroll(); return;
+    S.warn=null;queueReprice();rerenderKeepScroll();return;
   }
   if(t.dataset.act==='property-ownership'){ S.propertyOwnership=t.value;invalidateApproval();S.warn=null;rerenderKeepScroll();return; }
   if(t.dataset.act==='pay-acc'){ S.payAccount = +t.value; rerenderKeepScroll(); return; }
@@ -2386,10 +2447,11 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Enter' && e.target.dataset?.act==='code-cell'){ signCode(); return; }
   if(e.key !== 'Escape') return;
   if(S.staffMenu!=null){ const i=S.staffMenu; S.staffMenu=null; rerenderKeepScroll(); app.querySelector(`[data-act="staff-menu"][data-v="${i}"]`)?.focus(); return; }
+  if(S.demoPanel){S.demoPanel=false;rerenderKeepScroll();return;}
   if(S.consent){ S.consent = false; rerenderKeepScroll(); return; }
   if(S.mismatch || S.managerReq || S.explain || S.staffDelete!=null){ Object.assign(S, {mismatch:false, managerReq:false, explain:null, staffDelete:null}); rerenderKeepScroll(); return; }
   if(S.staffEdit!==null){ keepStaffDraft(); S.staffEdit=null; S.staffDraft=null; S.staffErr=null; rerenderKeepScroll(); return; }
-  if(S.signing){completionSerial++;if(S.signed){S.signed=false;S.codeSession=false;}S.signing=false;clearInterval(codeTimer);rerenderKeepScroll();return;}
+  if(S.signing){S.signing=false;clearInterval(codeTimer);if(S.operation)S.step='result';rerenderKeepScroll();return;}
   if(S.panel){ S.panel = null; S.warn = null; rerenderKeepScroll(); }
 });
 /* Закрытая крестиком или Esc форма нового сотрудника не теряет введённое */
@@ -2400,16 +2462,19 @@ if(typeof window!=='undefined' && window.addEventListener) window.addEventListen
   const step = e.state?.step;
   histIdx = e.state?.i || 0;
   closeLayers();
-  let target=FLOW.includes(step)?step:'showcase';
+  let target=(operationLocked()||S.operation?.payment==='confirmed')?'result':FLOW.includes(step)?step:'showcase';
   if(S.step==='done' && target!=='done') S.completedKey=null;
-  if(target==='done' && S.completedKey!==quoteKey()) target='checkout';
+  if((target==='done'||target==='result') && !S.operation)target='checkout';
   const problem=routeProblem(target);
   if(problem) applyRouteProblem(problem);else S.step=target;
   // Replace an invalid history destination instead of adding another step.
   if(history.state?.step!==S.step) history.replaceState({step:S.step,i:histIdx},'', '#'+S.step);
   render();window.scrollTo(0,0);if(problem) focusRouteProblem(problem);
 });
-{ const d = loadDraft(); if(d){ Object.assign(S, d); showToast('Восстановили оформление'); } }
+/* Restore draft and operation after all handlers are installed. */
+try{const version=store()?.getItem(CATALOG_KEY);if(['2026-11-10-v1','2026-11-10-v1-demo2'].includes(version))SCHEMA.version=version;}catch{}
+{const d=loadDraft();if(d){Object.assign(S,d);showToast('Восстановили оформление');}}
+{const op=loadOperation();if(op){S.operation=op;if(operationLocked(op)||['result','done'].includes(history.state?.step)){S.step=op.file==='ready'?'done':'result';scheduleOperation();}}}
 render();
 document.documentElement.lang = "ru";
 </script>

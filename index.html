@@ -2169,7 +2169,7 @@ app.addEventListener('click', e=>{
   else if(act==='terms-explain'){ S.explain=v; rerenderKeepScroll(); }
   else if(act==='explain-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.explain=null; rerenderKeepScroll(); }
   else if(act==='doc'){ S.panel='doc:'+v; rerenderKeepScroll(); }
-  else if(act==='draft-resume'){ const d=loadDraft(); if(d){ Object.assign(S, d); S.panel=null; S.warn=null; render(); window.scrollTo({top:0,behavior:'smooth'}); } }
+  else if(act==='draft-resume'){ const d=loadDraft(); if(d){ Object.assign(S, d); S.panel=null; S.warn=d.warn||null; render(); window.scrollTo({top:0,behavior:'smooth'}); } }
   else if(act==='remove-property'){ S.sel.prop.on=false;S.expandedModule=S.sel.dms.on?'dms':S.sel.liability.on?'liability':null;S.warn='Защита имущества убрана. Проверьте оставшийся состав и стоимость';invalidateApproval();rerenderKeepScroll(); }
   else if(act==='section'){ toggleSection(v); rerenderKeepScroll(); }
   else if(act==='module-open'){ S.expandedModule=S.expandedModule===v?null:v; rerenderKeepScroll(); }

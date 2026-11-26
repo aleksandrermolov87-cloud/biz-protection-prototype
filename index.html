@@ -365,9 +365,12 @@ button.cell{text-align:left;font:inherit;color:inherit;cursor:pointer}
 .block__hd{display:flex;flex-direction:column;gap:8px}
 .block__hd p{font-size:16px;line-height:24px;color:var(--text-secondary)}
 .fields{display:flex;flex-direction:column;gap:24px}
-.address-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-@media(max-width:600px){.address-fields{grid-template-columns:1fr}}
-.address-fields>div{min-width:0}
+.address-anchor{position:relative}
+.address-clear{align-self:center;flex:none;width:44px;height:44px;border:0;border-radius:8px;background:transparent;color:var(--text-secondary);font-size:24px;cursor:pointer}
+#address-results:not([hidden]){position:absolute;z-index:10;inset:calc(100% + 4px) 0 auto;max-height:min(280px,38vh);overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:12px;padding:4px;background:var(--bg-primary);box-shadow:0 6px 24px rgba(0,0,0,.14)}
+#address-results button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:10px 12px;text-align:left;border:0;border-radius:8px;background:transparent;color:var(--text-primary);font:inherit;cursor:pointer}
+#address-results button:hover,#address-results [aria-selected="true"]{background:var(--nt100)}
+#address-results small{color:var(--text-secondary);font-size:14px;line-height:20px}
 .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
 .frow--addr{grid-template-columns:minmax(0,1fr) 280px 40px;align-items:center}
 .addr-add{align-self:flex-start}
@@ -908,7 +911,7 @@ const START = {
   sel:structuredClone(SCHEMA.presets.find(p=>p.id==='reco').sel),
   staff:[], staffEdit:null, staffDraft:null,
   estimateEmployees:0,
-  addresses:[{parts:{},addr:''}], propertyOwnership:'', productVersion:SCHEMA.version,
+  addresses:[{parts:{},addr:''}], addressSearching:false, addressActive:-1, propertyOwnership:'', productVersion:SCHEMA.version,
   payAccount:0, payMail:'office@prodmarket.ru', payMailError:null,
   agreed:false, agreedFor:null, completedKey:null, signed:false, signway:'pep', consent:false, warn:null,
   code:'', codeArr:[], codeLeft:0, codeTries:3, codeWrong:false, codeHelp:false, codeSentAt:0, codeSession:false,
@@ -1239,68 +1242,102 @@ const ADDRESS_DIRECTORY = {
     'Петроградский район': {'Каменноостровский проспект': {'35':[], '40':['3','4']}}
   }}
 };
-const ADDRESS_LEVELS = [
-  ['region','Регион','Выберите регион'], ['city','Город','Выберите город'],
-  ['district','Район','Выберите район'], ['street','Улица','Выберите улицу'],
-  ['house','Дом','Выберите дом'], ['unit','Помещение (необязательно)','Не указано']
-];
+const ADDRESS_KEYS = ['region','city','district','street','house','unit'];
 const EXAMPLE_ADDRESS = {region:'Москва',city:'Москва',district:'Тверской район',street:'Лесная улица',house:'5',unit:'12'};
 
-function directoryAddress(selection = {}){
-  let branch = ADDRESS_DIRECTORY;
-  const parts = {}, fields = [];
-  for(const [key,label,prompt] of ADDRESS_LEVELS){
-    const choices = Array.isArray(branch) ? branch : Object.keys(branch);
-    if(!choices.length) break;
-    if(key==='district' && choices.length===1 && choices[0]===''){
-      branch=branch[''];
-      continue;
-    }
-    const autoCity = key==='city' && choices.length===1 && choices[0]===parts.region;
-    const value = autoCity ? choices[0] : choices.includes(selection[key]) ? selection[key] : '';
-    fields.push({key,label,prompt,choices,value,autoCity});
-    if(!value) break;
-    parts[key]=value;
-    if(key!=='unit') branch=branch[value];
+function formatAddress(parts){
+  return [parts.region,parts.city===parts.region?'':parts.city,parts.district,parts.street,
+    parts.house && 'дом '+parts.house,parts.unit && 'помещение '+parts.unit].filter(Boolean).join(', ');
+}
+function shortAddress(parts){
+  return [parts.street, 'д. '+parts.house, parts.unit && 'пом. '+parts.unit].filter(Boolean).join(', ');
+}
+function addressContext(parts){
+  return [parts.city,parts.region!==parts.city && parts.region,parts.district].filter(Boolean).join(' · ');
+}
+function addressTokens(value){
+  const words=value.toLocaleLowerCase('ru').replace(/ё/g,'е').replace(/спб/g,'санкт петербург')
+    .replace(/(\d)к(?=\d)/g,'$1 корпус ').replace(/р-н/g,'район').replace(/пр-(?:т|кт)/g,'проспект')
+    .match(/[а-яa-z]+|\d+/g) || [];
+  const short={ул:'улица',д:'дом',г:'город',пом:'помещение',оф:'помещение',офис:'помещение',корп:'корпус',обл:'область',респ:'республика'};
+  return words.map(w=>short[w]||w).filter(w=>w!=='город');
+}
+function indexAddresses(branch,parts={},depth=0){
+  if(depth===5){
+    return ['',...branch].map(unit=>{
+      const entry=unit?{...parts,unit}:parts;
+      const addr=formatAddress(entry);
+      return {parts:entry,addr,words:addressTokens(addr)};
+    });
   }
-  const addr = parts.house ? [parts.region,parts.city===parts.region?'':parts.city,parts.district,
-    parts.street,'дом '+parts.house,parts.unit?'помещение '+parts.unit:''].filter(Boolean).join(', ') : '';
-  return {parts,addr,fields};
+  const key=ADDRESS_KEYS[depth];
+  return Object.entries(branch).flatMap(([value,children])=>
+    indexAddresses(children,value?{...parts,[key]:value}:parts,depth+1));
 }
-function selectedAddress(parts){
-  const address=directoryAddress(parts);
-  return {parts:address.parts,addr:address.addr};
+const ADDRESS_ENTRIES=indexAddresses(ADDRESS_DIRECTORY);
+function selectedAddress(parts={}){
+  const row=ADDRESS_ENTRIES.find(entry=>ADDRESS_KEYS.every(k=>(entry.parts[k]||'')===(parts[k]||'')));
+  return row?{addr:row.addr,parts:{...row.parts}}:{addr:'',parts:{}};
 }
-function changeAddress(key,value){
-  const current=S.addresses[0];
-  const parts={...current.parts};
-  const index=ADDRESS_LEVELS.findIndex(([level])=>level===key);
-  if(index<0) return;
-  for(const [child] of ADDRESS_LEVELS.slice(index+1)) delete parts[child];
-  parts[key]=value;
-  const next=selectedAddress(parts);
-  if(current.previous && !next.addr) next.previous=current.previous;
-  S.addresses[0]=next;
+function addressMatches(query){
+  const terms=addressTokens(query);
+  if(!terms.length || query.trim().length<2) return [];
+  const numberTerms=terms.map((value,i)=>({value,after:terms[i-1]})).filter(t=>/^\d+$/.test(t.value));
+  const house=numberTerms.find(t=>t.after!=='помещение' && t.after!=='корпус');
+  const unit=numberTerms.find(t=>t.after==='помещение');
+  const block=numberTerms.find(t=>t.after==='корпус');
+  const includeUnits=numberTerms.length>0 || terms.includes('помещение');
+  const matches=ADDRESS_ENTRIES.filter(row=>{
+    if(row.parts.unit && !includeUnits) return false;
+    const houseParts=addressTokens(row.parts.house);
+    if(house && house.value!==houseParts[0]) return false;
+    if(unit && unit.value!==row.parts.unit) return false;
+    if(block && block.value!==houseParts[houseParts.indexOf('корпус')+1]) return false;
+    return terms.every(term=>row.words.some(word=>/^\d+$/.test(term)?word===term:word.startsWith(term)));
+  });
+  return matches.sort((a,b)=>Number(!!a.parts.unit)-Number(!!b.parts.unit)).slice(0,7);
+}
+function inputAddress(query){
+  S.addresses[0]={addr:'',parts:{},query};
+  S.addressSearching=true;
+  S.addressActive=-1;
   invalidateApproval();
   S.warn=null;
 }
+function chooseAddress(index){
+  if(operationLocked()) return;
+  const row=addressMatches(S.addresses[0].query||'')[index];
+  if(!row) return;
+  S.addresses[0]=selectedAddress(row.parts);
+  S.addressSearching=false;
+  S.addressActive=-1;
+  rerenderKeepScroll();
+  const field=document.getElementById('address-query');
+  field.value=field.getAttribute('value');
+  field.focus({preventScroll:true});
+  field.setSelectionRange(0,0);
+}
 function elParams(standalone=false){
-  const address=S.addresses[0];
-  const {fields}=directoryAddress(address.parts);
-  const showError=S.step==='config' ? S.showErrors : S.showErrorsDetails;
-  const controls=fields.map(({key,label,prompt,choices,value,autoCity})=>{
-    const id='addr-'+key, required=key!=='unit', error=showError && required && !value;
-    const options=choices.map(v=>`<option value="${esc(v)}" ${value===v?'selected':''}>${esc(v)}</option>`).join('');
-    return `<div id="${id}-group"><div class="field field--select${error?' field--err':''}"><label for="${id}">${label}</label>
-      <select id="${id}" data-act="address-select" data-v="${key}" ${autoCity?'disabled':''} ${required?'required':''}
-        ${error?`aria-invalid="true" aria-describedby="${id}-err"`:''}>${autoCity?'':`<option value="" ${!value?'selected':''}>${prompt}</option>`}${options}</select></div>
-      ${error?`<p class="field__err" id="${id}-err">${prompt}</p>`:''}</div>`;
-  }).join('');
+  const address=S.addresses[0],parts=address.parts||{};
+  const value=address.addr?[parts.city,shortAddress(parts)].join(', '):address.query||'';
+  const hasQuery=!address.addr && value.trim().length>=2;
+  const matches=hasQuery?addressMatches(value):[];
+  const noMatches=hasQuery && !matches.length;
+  const error=!address.addr && (S.step==='config'?S.showErrors:S.showErrorsDetails);
+  const expanded=S.addressSearching && matches.length>0, active=expanded && S.addressActive>=0 && S.addressActive<matches.length;
   const heading=standalone?'h2':'h4';
-  return `<div class="grp" role="group" aria-labelledby="property-address-title"><${heading} id="property-address-title" class="${standalone?'t-h3':'grp__t'}">Адрес помещения</${heading}>
-    <p class="t-sm sec">Выберите адрес из демонстрационного справочника.</p>
-    ${address.previous?`<p class="t-sm sec">Адрес из черновика: ${esc(address.previous)}. Выберите его в справочнике.</p>`:''}
-    <div class="address-fields">${controls}</div></div>`;
+  const hint=address.addr?addressContext(parts):'Начните с города или улицы. Например, «Москва Лесная 5».';
+  return `<div class="grp"><${heading} class="${standalone?'t-h3':'grp__t'}">Адрес помещения</${heading}>
+    <div class="address-search"><div class="address-anchor"><div class="field${error?' field--err':''}"><label for="address-query">Город, улица, дом</label>
+      <input id="address-query" data-act="address-query" role="combobox" aria-autocomplete="list" aria-expanded="${expanded}" aria-controls="address-results"
+        ${active?`aria-activedescendant="address-option-${S.addressActive}"`:''} aria-describedby="address-hint${error?' address-error':''}" ${error?'aria-invalid="true"':''}
+        aria-required="true" autocomplete="off" spellcheck="false" placeholder="Например, Москва Лесная 5" value="${esc(value)}">
+      ${value?'<button type="button" class="address-clear" data-act="address-clear" aria-label="Очистить адрес">×</button>':''}</div>
+      <div id="address-results" role="listbox" aria-label="Подсказки адреса" ${expanded?'':'hidden'}>${matches.map((row,i)=>`<button type="button" tabindex="-1" role="option" aria-selected="${i===S.addressActive}" id="address-option-${i}" data-act="address-option" data-v="${i}"><span>${esc(shortAddress(row.parts))}</span><small>${esc(addressContext(row.parts))}</small></button>`).join('')}</div></div>
+      <p class="field__sub" id="address-hint">${esc(hint)}</p>
+      ${error?'<p class="field__err" id="address-error">Выберите адрес с номером дома из подсказок</p>':''}
+      <p role="status" class="${noMatches?'field__sub':'sr'}">${noMatches?'Совпадений в демосправочнике нет. Проверьте город, улицу и номер дома.':expanded?'Подсказок: '+matches.length:''}</p>
+    </div></div>`;
 }
 /* Маршрут, когда условия пакета не подходят: Note и Button 48 secondary */
 const elLimitRoute = text => `<div class="route"><div class="note" role="status"><span>${text}</span></div>
@@ -1754,7 +1791,7 @@ function applyRouteProblem(problem){
 function focusRouteProblem(problem){
   if(problem.mismatch) return;
   const selector=problem.step==='config'?'[aria-invalid="true"]'
-    :S.sel.dms.on&&!EMPN()?'[data-act="staff-add"]':!S.addresses[0].addr.trim()?'[data-act="address-select"][aria-invalid="true"]':'#pay-acc';
+    :S.sel.dms.on&&!EMPN()?'[data-act="staff-add"]':!S.addresses[0].addr.trim()?'#address-query':'#pay-acc';
   (app.querySelector(selector)||app.querySelector('#estimate-employees')||app.querySelector('[data-act="module-input"]'))?.focus();live.textContent=problem.message;
 }
 function checkoutReady(){
@@ -1943,8 +1980,9 @@ function loadDraft(){
     if(!saved?.parts && saved?.addr==='Москва, улица Лесная, дом 5, помещение 12'){
       d.addresses=[selectedAddress(EXAMPLE_ADDRESS)];
     } else {
-      const previous=saved?.previous || (!saved?.parts && saved?.addr);
-      if(previous && !address.addr) address.previous=String(previous);
+      if(!address.addr){
+        address.query=String(saved?.query ?? (formatAddress(saved?.parts||{}) || saved?.previous || saved?.addr || ''));
+      }
       d.addresses=[address];
     }
     if(d.step==='checkout' && d.sel?.liability?.on && !d.addresses[0].addr) d.step='details';
@@ -2266,6 +2304,13 @@ app.addEventListener('click', e=>{
   if(S.staffMenu!=null && !e.target.closest?.('.menu, [data-act="staff-menu"]')){ S.staffMenu=null; if(!t) { rerenderKeepScroll(); return; } }
   if(!t || t.disabled) return;
   const act = t.dataset.act, v = t.dataset.v;
+  if(act==='address-option'){chooseAddress(+v);return;}
+  if(act==='address-clear' && !operationLocked()){
+    inputAddress('');rerenderKeepScroll();app.querySelector('#address-query').focus();return;
+  }
+  if(act==='address-query' && !S.addressSearching && S.addresses[0].query){
+    S.addressSearching=true;S.addressActive=-1;rerenderKeepScroll();return;
+  }
   if(act==='demo-open'){S.demoPanel=true;rerenderKeepScroll();return;}
   if(act==='demo-close'){if(t.classList.contains('dlg__scrim')&&e.target!==t)return;S.demoPanel=false;rerenderKeepScroll();return;}
   if(act==='demo-example'){openDemoExample();return;}
@@ -2292,7 +2337,7 @@ app.addEventListener('click', e=>{
         live.textContent=block; S.showErrorsDetails=true; rerenderKeepScroll();
         const staffTarget=S.staffEdit!==null ? '#st-fio' : S.staff.length ? '[data-act="staff-menu"]' : '[data-act="staff-add"]';
         const noAddr=(S.sel.prop.on||S.sel.liability.on) && !S.addresses[0].addr.trim();
-        const target=S.sel.dms.on && !EMPN() ? staffTarget : noAddr ? '[data-act="address-select"][aria-invalid="true"]' : '#pay-acc';
+        const target=S.sel.dms.on && !EMPN() ? staffTarget : noAddr ? '#address-query' : '#pay-acc';
         app.querySelector(target)?.focus();
         return;
       }
@@ -2412,7 +2457,13 @@ app.addEventListener('click', e=>{
   else if(act==='code-resend'){ startCode(true); rerenderKeepScroll(); const f=app.querySelector('#code-in'); if(f) f.focus(); }
   else if(act==='code-help'){ S.codeHelp=!S.codeHelp; rerenderKeepScroll(); }
 });
+app.addEventListener('mousedown',e=>{
+  if(e.target.closest('[data-act="address-option"]')) e.preventDefault();
+});
 app.addEventListener('input', e=>{
+  if(e.target.dataset?.act==='address-query' && !operationLocked()){
+    inputAddress(e.target.value);rerenderKeepScroll();return;
+  }
   const slider=e.target.closest('[data-act="sum-slider"]');
   if(slider){const [sid,key]=slider.dataset.v.split(':'); if(sid==='liability') S.sel.liability.limit=+slider.value; else S.sel.prop.sums[key]=+slider.value;queueReprice();rerenderKeepScroll(); return;}
 
@@ -2484,7 +2535,6 @@ app.addEventListener('change', e=>{
     S.sel[sid].opts=t.checked?[...S.sel[sid].opts.filter(x=>x!==oid),oid]:S.sel[sid].opts.filter(x=>x!==oid);
     S.warn=null;queueReprice();rerenderKeepScroll();return;
   }
-  if(t.dataset.act==='address-select'){ changeAddress(t.dataset.v,t.value);rerenderKeepScroll();return; }
   if(t.dataset.act==='property-ownership'){ S.propertyOwnership=t.value;invalidateApproval();S.warn=null;rerenderKeepScroll();return; }
   if(t.dataset.act==='pay-acc'){ S.payAccount = +t.value; rerenderKeepScroll(); return; }
   if(t.dataset.act==='signway'){ S.signway = t.value; rerenderKeepScroll(); return; }
@@ -2495,6 +2545,23 @@ app.addEventListener('change', e=>{
 /* Клавиши в полях с маской: Backspace/Delete перешагивают разделитель и стирают цифру за ним */
 app.addEventListener('keydown', e=>{
   const el = e.target;
+  if(el.dataset?.act==='address-query' && !e.isComposing){
+    if(e.key==='Escape' && S.addressSearching){
+      e.preventDefault();e.stopPropagation();S.addressSearching=false;S.addressActive=-1;rerenderKeepScroll();return;
+    }
+    const matches=addressMatches(S.addresses[0].query||'');
+    if(matches.length && (e.key==='ArrowDown' || e.key==='ArrowUp')){
+      e.preventDefault();
+      const last=matches.length-1;
+      S.addressActive=e.key==='ArrowDown'?Math.min(last,S.addressActive+1):(S.addressActive<0?last:Math.max(0,S.addressActive-1));
+      S.addressSearching=true;rerenderKeepScroll();
+      document.getElementById('address-option-'+S.addressActive)?.scrollIntoView({block:'nearest'});
+      return;
+    }
+    if(e.key==='Enter' && S.addressSearching && matches.length){
+      e.preventDefault();chooseAddress(Math.max(0,S.addressActive));return;
+    }
+  }
   if(el.dataset?.mask && (e.key==='Backspace' || e.key==='Delete') && el.selectionStart===el.selectionEnd){
     const p = el.selectionStart, pre = MASKS[el.dataset.mask].prefix?.length || 0;
     if(e.key==='Backspace' && p > pre && /\D/.test(el.value[p-1])) el.setSelectionRange(p-1, p-1);
@@ -2513,6 +2580,9 @@ app.addEventListener('keydown', e=>{
 /* CodeInput: фокус в пустой код всегда начинается с первой ячейки; цифра в ячейке выделяется */
 app.addEventListener('focusin', e=>{
   const el = e.target;
+  if(el.dataset?.act==='address-query' && S.addresses[0].query){
+    S.addressSearching=true;S.addressActive=-1;queueMicrotask(rerenderKeepScroll);
+  }
   if(el.dataset?.act==='code-cell'){
     if(+el.dataset.i > 0 && !S.codeArr[0]){ app.querySelector('#code-in')?.focus(); return; }
     if(el.value) el.select();
@@ -2521,6 +2591,9 @@ app.addEventListener('focusin', e=>{
 });
 /* Ведущие нули убираются при уходе из поля, как в AmountInput: значение берётся из состояния */
 app.addEventListener('focusout', e=>{
+  if(e.target.closest?.('.address-search') && !e.relatedTarget?.closest?.('[data-act="address-option"]') && S.addressSearching){
+    S.addressSearching=false;S.addressActive=-1;queueMicrotask(rerenderKeepScroll);
+  }
   if(e.target.dataset?.act==='staff-f' && e.target.dataset.v==='fio' && S.staffDraft){
     const v = normFio(e.target.value); if(v!==e.target.value){ e.target.value = v; S.staffDraft.fio = v; }
   }

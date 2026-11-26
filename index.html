@@ -365,6 +365,9 @@ button.cell{text-align:left;font:inherit;color:inherit;cursor:pointer}
 .block__hd{display:flex;flex-direction:column;gap:8px}
 .block__hd p{font-size:16px;line-height:24px;color:var(--text-secondary)}
 .fields{display:flex;flex-direction:column;gap:24px}
+.address-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:600px){.address-fields{grid-template-columns:1fr}}
+.address-fields>div{min-width:0}
 .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
 .frow--addr{grid-template-columns:minmax(0,1fr) 280px 40px;align-items:center}
 .addr-add{align-self:flex-start}
@@ -905,7 +908,7 @@ const START = {
   sel:structuredClone(SCHEMA.presets.find(p=>p.id==='reco').sel),
   staff:[], staffEdit:null, staffDraft:null,
   estimateEmployees:0,
-  addresses:[{addr:''}], propertyOwnership:'', productVersion:SCHEMA.version,
+  addresses:[{parts:{},addr:''}], propertyOwnership:'', productVersion:SCHEMA.version,
   payAccount:0, payMail:'office@prodmarket.ru', payMailError:null,
   agreed:false, agreedFor:null, completedKey:null, signed:false, signway:'pep', consent:false, warn:null,
   code:'', codeArr:[], codeLeft:0, codeTries:3, codeWrong:false, codeHelp:false, codeSentAt:0, codeSession:false,
@@ -1210,14 +1213,94 @@ function elSections(){
 function elWarn(){ return S.warn && !S.panel ? `<div class="note" role="status"><span>${S.warn}</span></div>` : ''; }
 /* Адрес страхуемого помещения: в таблице расчёт ведётся на один объект */
 function elPropertyOwnership(){
-  const err=S.showErrors && S.propertyOwnership!=='owned' ? (S.propertyOwnership==='rented'?'Для арендуемого помещения защита имущества недоступна':'Укажите, находится ли помещение в собственности страхователя') : '';
-  return elRadioTags('property-ownership','Кому принадлежит помещение?',[{id:'owned',name:'Страхователю'},{id:'rented',name:'Арендуется'}],S.propertyOwnership,'Собственником должен быть страхователь — ИП или юридическое лицо',err)
+  const err=S.showErrors && S.propertyOwnership!=='owned' ? (S.propertyOwnership==='rented'?'Для арендуемого помещения защита имущества недоступна':'Выберите, в собственности помещение или в аренде') : '';
+  return elRadioTags('property-ownership','Помещение ваше или в аренде?',[{id:'owned',name:'Я собственник'},{id:'rented',name:'Я арендую'}],S.propertyOwnership,'Имущество может застраховать ИП или компания, которым принадлежит помещение.',err)
     +(S.propertyOwnership==='rented'?`<div class="grp"><p class="t-md" role="status">Если помещение арендуется, застраховать его, оборудование и товар в этом продукте нельзя. Можно продолжить с ДМС и ответственностью.</p><div><button type="button" class="btn btn--48 btn--secondary" data-act="remove-property">Убрать защиту имущества</button></div></div>`:'');
 }
-function elParams(){
-  const a = S.addresses[0], err = (S.touched['addr-0'] || (S.step==='config' ? S.showErrors : S.showErrorsDetails)) && !a.addr.trim();
-  return `<div class="fields"><div><div class="field${err?' field--err':''}"><label for="addr-0">Адрес помещения</label><input id="addr-0" data-act="addr" data-v="0" value="${esc(a.addr)}" placeholder="Город, улица, дом" autocomplete="street-address" aria-required="true" aria-describedby="${err?'addr-0-err':'addr-0-hint'}" ${err?'aria-invalid="true"':''}></div>
-    ${err?'<p class="field__err" id="addr-0-err">Укажите адрес помещения</p>':'<p class="field__sub" id="addr-0-hint">Город, улица, номер дома и помещения</p>'}</div></div>`;
+/* Демонстрационный справочник для статического прототипа. */
+const ADDRESS_DIRECTORY = {
+  'Москва': {'Москва': {
+    'Тверской район': {'Лесная улица': {'5':['12','14'], '7':[]}, 'Тверская улица': {'18':[], '22':['3','5']}},
+    'Басманный район': {'Покровка': {'19':['1','2'], '27':[]}}
+  }},
+  'Московская область': {
+    'Химки': {'': {'Московская улица': {'14':[], '16':['2','4']}}},
+    'Красногорск': {'': {'Речная улица': {'8':['1','2'], '10':[]}}}
+  },
+  'Республика Татарстан': {
+    'Казань': {
+      'Вахитовский район': {'улица Баумана': {'47':[], '51':['1','2']}},
+      'Ново-Савиновский район': {'проспект Ямашева': {'46':[], '48, корпус 1':['2','3']}}
+    },
+    'Набережные Челны': {'Центральный район': {'проспект Мира': {'24':['1','2'], '26':[]}}}
+  },
+  'Санкт-Петербург': {'Санкт-Петербург': {
+    'Центральный район': {'Невский проспект': {'28':['1','2'], '48':[]}},
+    'Петроградский район': {'Каменноостровский проспект': {'35':[], '40':['3','4']}}
+  }}
+};
+const ADDRESS_LEVELS = [
+  ['region','Регион','Выберите регион'], ['city','Город','Выберите город'],
+  ['district','Район','Выберите район'], ['street','Улица','Выберите улицу'],
+  ['house','Дом','Выберите дом'], ['unit','Помещение (необязательно)','Не указано']
+];
+const EXAMPLE_ADDRESS = {region:'Москва',city:'Москва',district:'Тверской район',street:'Лесная улица',house:'5',unit:'12'};
+
+function directoryAddress(selection = {}){
+  let branch = ADDRESS_DIRECTORY;
+  const parts = {}, fields = [];
+  for(const [key,label,prompt] of ADDRESS_LEVELS){
+    const choices = Array.isArray(branch) ? branch : Object.keys(branch);
+    if(!choices.length) break;
+    if(key==='district' && choices.length===1 && choices[0]===''){
+      branch=branch[''];
+      continue;
+    }
+    const autoCity = key==='city' && choices.length===1 && choices[0]===parts.region;
+    const value = autoCity ? choices[0] : choices.includes(selection[key]) ? selection[key] : '';
+    fields.push({key,label,prompt,choices,value,autoCity});
+    if(!value) break;
+    parts[key]=value;
+    if(key!=='unit') branch=branch[value];
+  }
+  const addr = parts.house ? [parts.region,parts.city===parts.region?'':parts.city,parts.district,
+    parts.street,'дом '+parts.house,parts.unit?'помещение '+parts.unit:''].filter(Boolean).join(', ') : '';
+  return {parts,addr,fields};
+}
+function selectedAddress(parts){
+  const address=directoryAddress(parts);
+  return {parts:address.parts,addr:address.addr};
+}
+function changeAddress(key,value){
+  const current=S.addresses[0];
+  const parts={...current.parts};
+  const index=ADDRESS_LEVELS.findIndex(([level])=>level===key);
+  if(index<0) return;
+  for(const [child] of ADDRESS_LEVELS.slice(index+1)) delete parts[child];
+  parts[key]=value;
+  const next=selectedAddress(parts);
+  if(current.previous && !next.addr) next.previous=current.previous;
+  S.addresses[0]=next;
+  invalidateApproval();
+  S.warn=null;
+}
+function elParams(standalone=false){
+  const address=S.addresses[0];
+  const {fields}=directoryAddress(address.parts);
+  const showError=S.step==='config' ? S.showErrors : S.showErrorsDetails;
+  const controls=fields.map(({key,label,prompt,choices,value,autoCity})=>{
+    const id='addr-'+key, required=key!=='unit', error=showError && required && !value;
+    const options=choices.map(v=>`<option value="${esc(v)}" ${value===v?'selected':''}>${esc(v)}</option>`).join('');
+    return `<div id="${id}-group"><div class="field field--select${error?' field--err':''}"><label for="${id}">${label}</label>
+      <select id="${id}" data-act="address-select" data-v="${key}" ${autoCity?'disabled':''} ${required?'required':''}
+        ${error?`aria-invalid="true" aria-describedby="${id}-err"`:''}>${autoCity?'':`<option value="" ${!value?'selected':''}>${prompt}</option>`}${options}</select></div>
+      ${error?`<p class="field__err" id="${id}-err">${prompt}</p>`:''}</div>`;
+  }).join('');
+  const heading=standalone?'h2':'h4';
+  return `<div class="grp" role="group" aria-labelledby="property-address-title"><${heading} id="property-address-title" class="${standalone?'t-h3':'grp__t'}">Адрес помещения</${heading}>
+    <p class="t-sm sec">Выберите адрес из демонстрационного справочника.</p>
+    ${address.previous?`<p class="t-sm sec">Адрес из черновика: ${esc(address.previous)}. Выберите его в справочнике.</p>`:''}
+    <div class="address-fields">${controls}</div></div>`;
 }
 /* Маршрут, когда условия пакета не подходят: Note и Button 48 secondary */
 const elLimitRoute = text => `<div class="route"><div class="note" role="status"><span>${text}</span></div>
@@ -1582,7 +1665,7 @@ function configCheck(allowEmptyStaff=false){
   const sums = sel.prop.sums, emp = quoteEmployees();
   if(sel.liability.on && !liabilityAllowed()) return ['liability','Гражданскую ответственность нельзя оформить отдельно: добавьте имущество или ДМС'];
   if(n < R.minModules || n > R.maxModules) return [null,`Выберите от ${R.minModules} до ${R.maxModules} видов защиты`];
-  if(sel.prop.on && S.propertyOwnership!=='owned') return ['prop',S.propertyOwnership==='rented'?'Для арендуемого помещения защита имущества недоступна: уберите этот модуль':'Укажите, находится ли помещение в собственности страхователя'];
+  if(sel.prop.on && S.propertyOwnership!=='owned') return ['prop',S.propertyOwnership==='rented'?'Для арендуемого помещения защита имущества недоступна: уберите этот модуль':'Выберите, в собственности помещение или в аренде'];
   if(sel.prop.on && !S.addresses[0].addr.trim()) return ['prop','Укажите адрес помещения для защиты имущества'];
   const obj = id => p.objects.find(o=>o.id===id);
   if(sel.prop.on && !+sums.build) return ['prop','Имущество: укажите страховую сумму по помещению'];
@@ -1671,7 +1754,7 @@ function applyRouteProblem(problem){
 function focusRouteProblem(problem){
   if(problem.mismatch) return;
   const selector=problem.step==='config'?'[aria-invalid="true"]'
-    :S.sel.dms.on&&!EMPN()?'[data-act="staff-add"]':!S.addresses[0].addr.trim()?'#addr-0':'#pay-acc';
+    :S.sel.dms.on&&!EMPN()?'[data-act="staff-add"]':!S.addresses[0].addr.trim()?'[data-act="address-select"][aria-invalid="true"]':'#pay-acc';
   (app.querySelector(selector)||app.querySelector('#estimate-employees')||app.querySelector('[data-act="module-input"]'))?.focus();live.textContent=problem.message;
 }
 function checkoutReady(){
@@ -1709,7 +1792,7 @@ function nibDetails(){
   return nibShell(`<div class="page">
     <div class="page__hd"><h1 class="t-h1">${prodTitle()}</h1><p>Оформление страховки</p></div>
     <div class="cols"><div class="colmain">
-      ${needsAddress ? `<section class="block"><h2 class="t-h3">Адрес</h2>${elParams()}</section>` : ''}
+      ${needsAddress ? `<section class="block">${elParams(true)}</section>` : ''}
       ${S.sel.dms.on ? `<section class="block">${elStaff()}</section>` : ''}
       ${elAccount()}
       ${detailsBar()}
@@ -1826,7 +1909,7 @@ function sfaDetails(){
     ${sfaBack()}
     <div class="page__hd"><h1 class="t-h2">${prodTitle()}</h1><p>Оформление страховки</p></div>
     <div class="cols"><div class="colmain">
-      ${needsAddress ? `<section class="block"><h2 class="t-h3">Адрес</h2>${elParams()}</section>` : ''}
+      ${needsAddress ? `<section class="block">${elParams(true)}</section>` : ''}
       ${S.sel.dms.on ? `<section class="block">${elStaff()}</section>` : ''}
       ${elAccount()}
       ${detailsBar()}
@@ -1855,6 +1938,16 @@ function loadDraft(){
     if(!d || !['config','details','checkout'].includes(d.step)) return null;
     if(Array.isArray(d.staff)&&d.staff.some(p=>p.on&&staffFull(p)))d.staffListStarted=true;
     if(d.productVersion!==SCHEMA.version){d.productVersion=SCHEMA.version;d.step='config';d.warn='Условия продукта обновились. Проверьте состав и новую стоимость до продолжения';}
+    const saved=d.addresses?.[0];
+    const address=selectedAddress(saved?.parts);
+    if(!saved?.parts && saved?.addr==='Москва, улица Лесная, дом 5, помещение 12'){
+      d.addresses=[selectedAddress(EXAMPLE_ADDRESS)];
+    } else {
+      const previous=saved?.previous || (!saved?.parts && saved?.addr);
+      if(previous && !address.addr) address.previous=String(previous);
+      d.addresses=[address];
+    }
+    if(d.step==='checkout' && d.sel?.liability?.on && !d.addresses[0].addr) d.step='details';
     if(d.sel?.prop?.on && d.propertyOwnership!=='owned'){d.step='config';d.expandedModule='prop';}
     // Старый черновик мог остановиться до ввода адреса на прежнем втором шаге.
     if(d.sel?.prop?.on && !d.addresses?.[0]?.addr?.trim()){d.step='config';d.expandedModule='prop';}
@@ -2064,7 +2157,7 @@ function elDemoDialog(){
 }
 function openDemoExample(){
  const channel=S.channel,scenario=S.demoScenario||'success';clearTimeout(managerTimer);managerSerial++;clearTimeout(operationTimer);clearTimeout(priceTimer);clearInterval(codeTimer);operationSerial++;Object.assign(S,structuredClone(START),{channel,demoScenario:scenario,step:'checkout',propertyOwnership:'owned',estimateEmployees:1});
- S.addresses=[{addr:'Москва, улица Лесная, дом 5, помещение 12'}];S.staff=[{on:true,fio:'Иванов Иван Иванович',dob:'10.10.1990',phone:'+7 999 000 00 01',email:'employee@example.com'}];S.payMail='policy@example.com';S.staffListStarted=true;
+ S.addresses=[selectedAddress(EXAMPLE_ADDRESS)];S.staff=[{on:true,fio:'Иванов Иван Иванович',dob:'10.10.1990',phone:'+7 999 000 00 01',email:'employee@example.com'}];S.payMail='policy@example.com';S.staffListStarted=true;
  if(scenario==='staff-less'){S.estimateEmployees=2;S.step='details';}
  if(scenario==='staff-more'){S.staff.push({on:true,fio:'Петров Пётр Петрович',dob:'15.06.1988',phone:'+7 999 000 00 02',email:'employee2@example.com'});S.step='details';}
  if(scenario==='rental'){S.propertyOwnership='rented';S.step='config';}
@@ -2199,7 +2292,7 @@ app.addEventListener('click', e=>{
         live.textContent=block; S.showErrorsDetails=true; rerenderKeepScroll();
         const staffTarget=S.staffEdit!==null ? '#st-fio' : S.staff.length ? '[data-act="staff-menu"]' : '[data-act="staff-add"]';
         const noAddr=(S.sel.prop.on||S.sel.liability.on) && !S.addresses[0].addr.trim();
-        const target=S.sel.dms.on && !EMPN() ? staffTarget : noAddr ? '#addr-0' : '#pay-acc';
+        const target=S.sel.dms.on && !EMPN() ? staffTarget : noAddr ? '[data-act="address-select"][aria-invalid="true"]' : '#pay-acc';
         app.querySelector(target)?.focus();
         return;
       }
@@ -2339,12 +2432,6 @@ app.addEventListener('input', e=>{
     queueReprice();rerenderKeepScroll();
     return;
   }
-  const a = e.target.closest('[data-act="addr"]');
-  if(a){
-    S.addresses[+a.dataset.v].addr = a.value;
-    rerenderKeepScroll();
-    return;
-  }
   const mail = e.target.closest('[data-act="pay-mail"]');
   if(mail){
     S.payMail = mail.value;
@@ -2397,6 +2484,7 @@ app.addEventListener('change', e=>{
     S.sel[sid].opts=t.checked?[...S.sel[sid].opts.filter(x=>x!==oid),oid]:S.sel[sid].opts.filter(x=>x!==oid);
     S.warn=null;queueReprice();rerenderKeepScroll();return;
   }
+  if(t.dataset.act==='address-select'){ changeAddress(t.dataset.v,t.value);rerenderKeepScroll();return; }
   if(t.dataset.act==='property-ownership'){ S.propertyOwnership=t.value;invalidateApproval();S.warn=null;rerenderKeepScroll();return; }
   if(t.dataset.act==='pay-acc'){ S.payAccount = +t.value; rerenderKeepScroll(); return; }
   if(t.dataset.act==='signway'){ S.signway = t.value; rerenderKeepScroll(); return; }
@@ -2433,10 +2521,6 @@ app.addEventListener('focusin', e=>{
 });
 /* Ведущие нули убираются при уходе из поля, как в AmountInput: значение берётся из состояния */
 app.addEventListener('focusout', e=>{
-  if(e.target.dataset?.act==='addr'){
-    S.touched['addr-0']=true;
-    if(!S.addresses[0].addr.trim()) setTimeout(rerenderKeepScroll);
-  }
   if(e.target.dataset?.act==='staff-f' && e.target.dataset.v==='fio' && S.staffDraft){
     const v = normFio(e.target.value); if(v!==e.target.value){ e.target.value = v; S.staffDraft.fio = v; }
   }
@@ -2473,7 +2557,7 @@ if(typeof window!=='undefined' && window.addEventListener) window.addEventListen
 });
 /* Restore draft and operation after all handlers are installed. */
 try{const version=store()?.getItem(CATALOG_KEY);if(['2026-11-10-v1','2026-11-10-v1-demo2'].includes(version))SCHEMA.version=version;}catch{}
-{const d=loadDraft();if(d){Object.assign(S,d);showToast('Восстановили оформление');}}
+{const d=loadDraft();if(d){Object.assign(S,d);showToast('Восстановили оформление');}else if(window.location.hash==='#config'){S.step='config';}}
 {const op=loadOperation();if(op){S.operation=op;if(operationLocked(op)||['result','done'].includes(history.state?.step)){S.step=op.file==='ready'?'done':'result';scheduleOperation();}}}
 render();
 document.documentElement.lang = "ru";

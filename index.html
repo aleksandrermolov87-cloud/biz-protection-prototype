@@ -366,6 +366,8 @@ button.cell{text-align:left;font:inherit;color:inherit;cursor:pointer}
 .block__hd p{font-size:16px;line-height:24px;color:var(--text-secondary)}
 .fields{display:flex;flex-direction:column;gap:24px}
 .address-anchor{position:relative}
+.address-refusal{margin-top:8px;display:grid;gap:12px}
+.address-actions{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap}
 .address-clear{align-self:center;flex:none;width:44px;height:44px;border:0;border-radius:8px;background:transparent;color:var(--text-secondary);font-size:24px;cursor:pointer}
 #address-results:not([hidden]){position:absolute;z-index:10;inset:calc(100% + 4px) 0 auto;max-height:min(280px,38vh);overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:12px;padding:4px;background:var(--bg-primary);box-shadow:0 6px 24px rgba(0,0,0,.14)}
 #address-results button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:10px 12px;text-align:left;border:0;border-radius:8px;background:transparent;color:var(--text-primary);font:inherit;cursor:pointer}
@@ -1222,6 +1224,7 @@ function elPropertyOwnership(){
 }
 /* Демонстрационный справочник для статического прототипа. */
 const ADDRESS_DIRECTORY = {
+  'Демонстрационный регион': {'Примерск': {'': {'Тестовая улица': {'1':['10'], '2':['10','11']}}}},
   'Москва': {'Москва': {
     'Тверской район': {'Лесная улица': {'5':['12','14'], '7':[]}, 'Тверская улица': {'18':[], '22':['3','5']}},
     'Басманный район': {'Покровка': {'19':['1','2'], '27':[]}}
@@ -1244,6 +1247,19 @@ const ADDRESS_DIRECTORY = {
 };
 const ADDRESS_KEYS = ['region','city','district','street','house','unit'];
 const EXAMPLE_ADDRESS = {region:'Москва',city:'Москва',district:'Тверской район',street:'Лесная улица',house:'5',unit:'12'};
+
+const REFUSED_DEMO_BUILDING = {region:'Демонстрационный регион',city:'Примерск',street:'Тестовая улица',house:'2'};
+const ADDRESS_REFUSAL_SCENARIOS = [
+  ['address-refused-property','Отказ по адресу · только имущество'],
+  ['address-refused-package','Отказ по адресу · пакет с ДМС'],
+  ['address-refused-liability','Отказ по адресу · ответственность и ДМС']
+];
+function addressRefusal(sel,address){
+  if(!(sel?.prop?.on || sel?.liability?.on) || !address?.addr ||
+    !Object.entries(REFUSED_DEMO_BUILDING).every(([k,v])=>address.parts?.[k]===v)) return '';
+  const cover=sel.prop.on ? (sel.liability.on?'имущество и гражданскую ответственность':'имущество') : 'гражданскую ответственность';
+  return `По этому адресу нельзя застраховать ${cover}.`;
+}
 
 function formatAddress(parts){
   return [parts.region,parts.city===parts.region?'':parts.city,parts.district,parts.street,
@@ -1323,10 +1339,11 @@ function elParams(standalone=false){
   const hasQuery=!address.addr && value.trim().length>=2;
   const matches=hasQuery?addressMatches(value):[];
   const noMatches=hasQuery && !matches.length;
-  const error=!address.addr && (S.step==='config'?S.showErrors:S.showErrorsDetails);
+  const refusal=addressRefusal(S.sel,address);
+  const error=refusal || (!address.addr && (S.step==='config'?S.showErrors:S.showErrorsDetails) ? 'Выберите адрес с номером дома из подсказок' : '');
   const expanded=S.addressSearching && matches.length>0, active=expanded && S.addressActive>=0 && S.addressActive<matches.length;
   const heading=standalone?'h2':'h4';
-  const hint=address.addr?addressContext(parts):'Начните с города или улицы. Например, «Москва Лесная 5».';
+  const hint=address.addr?[addressContext(parts),refusal?'':'Адрес подходит для оформления'].filter(Boolean).join(' · '):'Начните с города или улицы. Например, «Москва Лесная 5».';
   return `<div class="grp"><${heading} class="${standalone?'t-h3':'grp__t'}">Адрес помещения</${heading}>
     <div class="address-search"><div class="address-anchor"><div class="field${error?' field--err':''}"><label for="address-query">Город, улица, дом</label>
       <input id="address-query" data-act="address-query" role="combobox" aria-autocomplete="list" aria-expanded="${expanded}" aria-controls="address-results"
@@ -1335,7 +1352,10 @@ function elParams(standalone=false){
       ${value?'<button type="button" class="address-clear" data-act="address-clear" aria-label="Очистить адрес">×</button>':''}</div>
       <div id="address-results" role="listbox" aria-label="Подсказки адреса" ${expanded?'':'hidden'}>${matches.map((row,i)=>`<button type="button" tabindex="-1" role="option" aria-selected="${i===S.addressActive}" id="address-option-${i}" data-act="address-option" data-v="${i}"><span>${esc(shortAddress(row.parts))}</span><small>${esc(addressContext(row.parts))}</small></button>`).join('')}</div></div>
       <p class="field__sub" id="address-hint">${esc(hint)}</p>
-      ${error?'<p class="field__err" id="address-error">Выберите адрес с номером дома из подсказок</p>':''}
+      ${error?`<p class="field__err" id="address-error" role="alert">${esc(error)}</p>`:''}
+      ${refusal?`<div class="address-refusal"><p class="t-sm">Проверьте дом и помещение. ${S.sel.dms.on?'Если адрес верный, можно оставить ДМС для сотрудников.':'Если адрес верный, можно вернуться к выбору страховки.'}</p>
+        <div class="address-actions"><button type="button" class="btn btn--48 btn--secondary" data-act="address-edit">Исправить адрес</button>
+        ${S.sel.dms.on?'<button type="button" class="btn btn--48 btn--secondary" data-act="address-dms">Оставить только ДМС</button>':'<button type="button" class="lnk" data-act="go" data-v="showcase">К выбору страховки</button>'}</div></div>`:''}
       <p role="status" class="${noMatches?'field__sub':'sr'}">${noMatches?'Совпадений в демосправочнике нет. Проверьте город, улицу и номер дома.':expanded?'Подсказок: '+matches.length:''}</p>
     </div></div>`;
 }
@@ -1704,6 +1724,8 @@ function configCheck(allowEmptyStaff=false){
   if(n < R.minModules || n > R.maxModules) return [null,`Выберите от ${R.minModules} до ${R.maxModules} видов защиты`];
   if(sel.prop.on && S.propertyOwnership!=='owned') return ['prop',S.propertyOwnership==='rented'?'Для арендуемого помещения защита имущества недоступна: уберите этот модуль':'Выберите, в собственности помещение или в аренде'];
   if(sel.prop.on && !S.addresses[0].addr.trim()) return ['prop','Укажите адрес помещения для защиты имущества'];
+  const refusal=addressRefusal(sel,S.addresses[0]);
+  if(sel.prop.on && refusal) return ['prop',refusal];
   const obj = id => p.objects.find(o=>o.id===id);
   if(sel.prop.on && !+sums.build) return ['prop','Имущество: укажите страховую сумму по помещению'];
   if(sel.prop.on && out(+sums.build, obj('build'))) return ['prop','Имущество: сумма по помещению вне диапазона'];
@@ -1718,7 +1740,8 @@ function configCheck(allowEmptyStaff=false){
 function configBlock(){ return S.pricingBusy?'Рассчитываем стоимость…':configCheck()[1]; }
 function badModule(){ return configCheck()[0]; }
 function detailsBlock(){
-  const c = calc();
+  const refusal=addressRefusal(S.sel,S.addresses[0]);
+  if(refusal) return refusal;
   if(S.sel.dms.on && !EMPN()){
     const p = S.staff.find(x=>!staffFull(x)); if(!p) return 'Добавьте в ДМС хотя бы одного сотрудника';
     const miss = staffMiss(p);
@@ -1791,7 +1814,7 @@ function applyRouteProblem(problem){
 function focusRouteProblem(problem){
   if(problem.mismatch) return;
   const selector=problem.step==='config'?'[aria-invalid="true"]'
-    :S.sel.dms.on&&!EMPN()?'[data-act="staff-add"]':!S.addresses[0].addr.trim()?'#address-query':'#pay-acc';
+    :addressRefusal(S.sel,S.addresses[0])?'#address-query':S.sel.dms.on&&!EMPN()?'[data-act="staff-add"]':!S.addresses[0].addr.trim()?'#address-query':'#pay-acc';
   (app.querySelector(selector)||app.querySelector('#estimate-employees')||app.querySelector('[data-act="module-input"]'))?.focus();live.textContent=problem.message;
 }
 function checkoutReady(){
@@ -1985,10 +2008,11 @@ function loadDraft(){
       }
       d.addresses=[address];
     }
-    if(d.step==='checkout' && d.sel?.liability?.on && !d.addresses[0].addr) d.step='details';
+    const needsAddress=!d.addresses[0].addr || !!addressRefusal(d.sel,d.addresses[0]);
+    if(d.step==='checkout' && d.sel?.liability?.on && needsAddress) d.step='details';
     if(d.sel?.prop?.on && d.propertyOwnership!=='owned'){d.step='config';d.expandedModule='prop';}
     // Старый черновик мог остановиться до ввода адреса на прежнем втором шаге.
-    if(d.sel?.prop?.on && !d.addresses?.[0]?.addr?.trim()){d.step='config';d.expandedModule='prop';}
+    if(d.sel?.prop?.on && needsAddress){d.step='config';d.expandedModule='prop';}
     return d;
   } catch { return null; }
 }
@@ -2044,14 +2068,14 @@ const VIEWS = {
 };
 const FLOW = ['showcase','config','details','checkout','result','done'];
 /* v1.3: screen behavior and explicitly simulated operations. No external payment/signature calls. */
-const DEMO_SCENARIOS=[['success','Оформление без ошибок'],['staff-less','Сотрудников меньше оценки'],['staff-more','Сотрудников больше оценки'],['rental','Помещение в аренде'],['code-expired','Код подписи истёк'],['sign-failed','Ошибка подтверждения подписи'],['payment-unknown','Оплата: результат неизвестен'],['payment-failed','Оплата не выполнена'],['issue-failed','Оформление требует проверки'],['file-preparing','Полис оформлен, файл готовится'],['file-failed','Не удалось получить файл'],['manager-failed','Ошибка заявки менеджеру']];
+const DEMO_SCENARIOS=[['success','Оформление без ошибок'],['staff-less','Сотрудников меньше оценки'],['staff-more','Сотрудников больше оценки'],['rental','Помещение в аренде'],...ADDRESS_REFUSAL_SCENARIOS,['code-expired','Код подписи истёк'],['sign-failed','Ошибка подтверждения подписи'],['payment-unknown','Оплата: результат неизвестен'],['payment-failed','Оплата не выполнена'],['issue-failed','Оформление требует проверки'],['file-preparing','Полис оформлен, файл готовится'],['file-failed','Не удалось получить файл'],['manager-failed','Ошибка заявки менеджеру']];
 const OP_KEY='alfa360-operation-v13', CATALOG_KEY='alfa360-catalog-demo';
 function localBusinessDate(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());return ['year','month','day'].map(t=>parts.find(p=>p.type===t).value).join('-');}
 let operationSerial=0, operationTimer=null, priceTimer=null, priceSerial=0, managerTimer=null, managerSerial=0;
 const staffMismatchKey=()=>JSON.stringify({estimate:S.estimateEmployees,count:EMPN(),price:calc().premium,selection:S.sel});
 const staffMismatchNeeded=()=>S.sel.dms.on && S.estimateEmployees>0 && EMPN()>0 && S.estimateEmployees!==EMPN() && S.mismatchOk!==staffMismatchKey();
 const operationLocked=(op=S.operation)=>!!op && (op.signature==='pending'||op.payment==='pending'||op.payment==='unknown'||(op.payment==='confirmed'&&op.issuance!=='issued'));
-function snapshotConfiguration(){return structuredClone({key:quoteKey(),productVersion:SCHEMA.version,catalog:SCHEMA,channel:S.channel,client:CLIENT,sel:S.sel,ownership:S.propertyOwnership,address:S.addresses[0].addr,staff:S.staff.filter(p=>p.on&&staffFull(p)),employeeCount:EMPN(),account:S.payAccount,accountLabel:ACC(),email:S.payMail.trim(),signway:S.signway,calc:calc()});}
+function snapshotConfiguration(){return structuredClone({key:quoteKey(),productVersion:SCHEMA.version,catalog:SCHEMA,channel:S.channel,client:CLIENT,sel:S.sel,ownership:S.sel.prop.on?S.propertyOwnership:'',address:S.sel.prop.on||S.sel.liability.on?S.addresses[0].addr:'',staff:S.staff.filter(p=>p.on&&staffFull(p)),employeeCount:EMPN(),account:S.payAccount,accountLabel:ACC(),email:S.payMail.trim(),signway:S.signway,calc:calc()});}
 function newMockOperation(snapshot,scenario='success'){const id='DEMO-'+Date.now().toString(36)+'-'+(++operationSerial);return {id,snapshot:structuredClone(snapshot),scenario,signature:'pending',payment:'not_started',issuance:'not_started',file:'not_started',paymentAttempts:0,signatureAttempts:1,paymentDate:null,createdAt:new Date().toISOString(),flags:{},revision:1};}
 function advanceMockOperation(op){
  if(op.signature==='pending'){
@@ -2098,7 +2122,7 @@ function scheduleOperation(){
  operationTimer=setTimeout(()=>{if(S.operation?.id!==id)return;advanceMockOperation(S.operation);operationChanged(S.operation);scheduleOperation();},650);
 }
 function beginOperation(){
- if(S.pricingBusy || !S.agreed || S.agreedFor!==quoteKey())return null;
+ if(S.pricingBusy || !S.agreed || S.agreedFor!==quoteKey() || addressRefusal(S.sel,S.addresses[0]))return null;
  if(S.operation&&(operationLocked()||(S.operation.signature==='confirmed'&&S.operation.snapshot.key===quoteKey()&&S.operation.payment!=='failed'))){S.step='result';return S.operation;}
  if(S.operation?.signature==='failed'&&S.operation.snapshot.key===quoteKey())checkMockOperation(S.operation);
  else {S.operation=newMockOperation(snapshotConfiguration(),S.demoScenario||'success');if(S.demoPaymentRetry){S.operation.flags.paymentChecked=true;S.demoPaymentRetry=false;}}
@@ -2191,16 +2215,27 @@ function elManagerDialog(){
  if(!S.managerReq)return '';const state=S.managerState||'idle',busy=state==='pending';return dlg500('mgr-t','Заявка менеджеру',`<p>Менеджер поможет подобрать защиту, если условия пакета не подходят.</p><p class="t-sm sec">В прототипе заявка не отправляется.</p>${state==='failed'?'<p class="field__err" role="alert">Не удалось показать подтверждение заявки. Попробуйте ещё раз</p>':state==='success'?'<p role="status">Заявка принята в демонстрации. Реальная заявка не отправлялась.</p>':''}`,`${state!=='success'?`<button class="btn btn--48 ${PRI()}" data-act="manager-submit" ${busy?'disabled aria-busy="true"':''}>${busy?'Проверяем…':state==='failed'?'Повторить':'Показать отправку заявки (демо)'}</button>`:''}<button class="btn btn--48 btn--secondary" data-act="manager-close">Понятно</button>`,'manager-close');
 }
 function elDemoDialog(){
- if(!S.demoPanel)return '';return dlg500('demo-t','Сценарии прототипа',`<p>Все операции демонстрационные: реальные документы не подписываются, полис не выпускается, деньги не списываются.</p><div class="field field--select"><label for="demo-scenario">Сценарий следующего оформления</label><select id="demo-scenario" data-act="demo-scenario">${DEMO_SCENARIOS.map(([v,t])=>`<option value="${v}" ${S.demoScenario===v?'selected':''}>${t}</option>`).join('')}</select></div><p class="t-sm sec">Демопример заменит введённые данные примером с полным списком. Выбранный сценарий также можно пройти со своими данными.</p>`,`<button class="btn btn--48 ${PRI()}" data-act="demo-example">Открыть демопример</button><button class="btn btn--48 btn--secondary" data-act="demo-close">Продолжить с моими данными</button><button class="lnk" data-act="demo-catalog">Показать изменение условий каталога</button>`,'demo-close');
+ if(!S.demoPanel)return '';return dlg500('demo-t','Сценарии прототипа',`<p>Все операции демонстрационные: реальные документы не подписываются, полис не выпускается, деньги не списываются.</p><div class="field field--select"><label for="demo-scenario">Сценарий следующего оформления</label><select id="demo-scenario" data-act="demo-scenario">${DEMO_SCENARIOS.map(([v,t])=>`<option value="${v}" ${S.demoScenario===v?'selected':''}>${t}</option>`).join('')}</select></div><p class="t-sm sec">Демопример заменит введённые данные примером с полным списком. Выбранный сценарий также можно пройти со своими данными.</p>${ADDRESS_REFUSAL_SCENARIOS.some(([id])=>id===S.demoScenario)?'<p>Тестовые адреса для проверки: Примерск, Тестовая улица. Дом 2 получит отказ, дом 1 пройдёт проверку.</p>':''}`,`<button class="btn btn--48 ${PRI()}" data-act="demo-example">Открыть демопример</button><button class="btn btn--48 btn--secondary" data-act="demo-close">Продолжить с моими данными</button><button class="lnk" data-act="demo-catalog">Показать изменение условий каталога</button>`,'demo-close');
 }
 function openDemoExample(){
  const channel=S.channel,scenario=S.demoScenario||'success';clearTimeout(managerTimer);managerSerial++;clearTimeout(operationTimer);clearTimeout(priceTimer);clearInterval(codeTimer);operationSerial++;Object.assign(S,structuredClone(START),{channel,demoScenario:scenario,step:'checkout',propertyOwnership:'owned',estimateEmployees:1});
  S.addresses=[selectedAddress(EXAMPLE_ADDRESS)];S.staff=[{on:true,fio:'Иванов Иван Иванович',dob:'10.10.1990',phone:'+7 999 000 00 01',email:'employee@example.com'}];S.payMail='policy@example.com';S.staffListStarted=true;
  if(scenario==='staff-less'){S.estimateEmployees=2;S.step='details';}
  if(scenario==='staff-more'){S.staff.push({on:true,fio:'Петров Пётр Петрович',dob:'15.06.1988',phone:'+7 999 000 00 02',email:'employee2@example.com'});S.step='details';}
+ const refusalExample=ADDRESS_REFUSAL_SCENARIOS.some(([id])=>id===scenario);
+ if(refusalExample){
+   S.addresses=[selectedAddress(REFUSED_DEMO_BUILDING)];
+   S.step='config';
+   if(scenario==='address-refused-property'){applyPreset('base');S.staff=[];S.staffListStarted=false;S.estimateEmployees=0;}
+   if(scenario==='address-refused-liability'){S.sel.prop.on=false;S.propertyOwnership='';S.step='details';}
+ }
  if(scenario==='rental'){S.propertyOwnership='rented';S.step='config';}
  if(scenario==='manager-failed'){S.step='config';S.managerReq=true;}
- persistOperation();dropDraft();render();window.scrollTo(0,0);
+ persistOperation();dropDraft();render();
+ if(refusalExample){
+   const field=document.getElementById('address-query');
+   field?.focus({preventScroll:true});field?.scrollIntoView({block:'center'});
+ }else window.scrollTo(0,0);
 }
 function downloadRegistry(){if(S.channel!=='sfa'||S.operation?.issuance!=='issued')return;const data=buildReconciliation(S.operation);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='modular-reconciliation-demo.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
@@ -2304,6 +2339,18 @@ app.addEventListener('click', e=>{
   if(S.staffMenu!=null && !e.target.closest?.('.menu, [data-act="staff-menu"]')){ S.staffMenu=null; if(!t) { rerenderKeepScroll(); return; } }
   if(!t || t.disabled) return;
   const act = t.dataset.act, v = t.dataset.v;
+  if(act==='address-edit'){
+    const field=app.querySelector('#address-query');
+    field?.focus();field?.select();return;
+  }
+  if(act==='address-dms' && !operationLocked() && S.sel.dms.on && addressRefusal(S.sel,S.addresses[0])){
+    S.sel.prop.on=false;S.sel.liability.on=false;S.addresses=[{parts:{},addr:''}];
+    S.propertyOwnership='';S.step='config';S.expandedModule='dms';S.showErrors=false;S.showErrorsDetails=false;
+    S.warn='В страховке осталось только ДМС. Проверьте стоимость перед продолжением.';
+    invalidateApproval();render();
+    const dms=document.getElementById('module-dms');
+    dms?.focus({preventScroll:true});dms?.scrollIntoView({block:'center'});return;
+  }
   if(act==='address-option'){chooseAddress(+v);return;}
   if(act==='address-clear' && !operationLocked()){
     inputAddress('');rerenderKeepScroll();app.querySelector('#address-query').focus();return;
@@ -2337,7 +2384,7 @@ app.addEventListener('click', e=>{
         live.textContent=block; S.showErrorsDetails=true; rerenderKeepScroll();
         const staffTarget=S.staffEdit!==null ? '#st-fio' : S.staff.length ? '[data-act="staff-menu"]' : '[data-act="staff-add"]';
         const noAddr=(S.sel.prop.on||S.sel.liability.on) && !S.addresses[0].addr.trim();
-        const target=S.sel.dms.on && !EMPN() ? staffTarget : noAddr ? '#address-query' : '#pay-acc';
+        const target=addressRefusal(S.sel,S.addresses[0]) ? '#address-query' : S.sel.dms.on && !EMPN() ? staffTarget : noAddr ? '#address-query' : '#pay-acc';
         app.querySelector(target)?.focus();
         return;
       }
@@ -2355,7 +2402,7 @@ app.addEventListener('click', e=>{
     if(histIdx > 0 && typeof history!=='undefined'){ history.back(); return; }
     const i=FLOW.indexOf(S.step); S.step=FLOW[Math.max(0,i-1)]; render();
   }
-  else if(act==='mismatch-ok'){ S.mismatchOk=staffMismatchKey(); S.mismatch=false; S.step='checkout'; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  else if(act==='mismatch-ok'){ S.mismatchOk=staffMismatchKey(); S.mismatch=false; if(!checkoutReady())return; S.step='checkout'; render(); window.scrollTo({top:0,behavior:'smooth'}); }
   else if(act==='mismatch-add'){ const smaller=EMPN()<S.estimateEmployees;S.mismatch=false;lastLayer=null;rerenderKeepScroll();app.querySelector(smaller?'[data-act="staff-add"]':'[data-act="staff-menu"]')?.focus(); }
   else if(act==='mismatch-close'){ if(t.classList.contains('dlg__scrim') && e.target!==t) return; S.mismatch=false; rerenderKeepScroll(); }
   else if(act==='manager-request'){S.managerReq=true;if(!S.managerState)S.managerState='idle';rerenderKeepScroll();}
@@ -2521,7 +2568,7 @@ app.addEventListener('input', e=>{
 });
 app.addEventListener('change', e=>{
   const t = e.target.closest('[data-act]'); if(!t) return;
-  if(t.dataset.act==='demo-scenario'){S.demoScenario=t.value;S.demoExpiryConsumed=false;return;}
+  if(t.dataset.act==='demo-scenario'){S.demoScenario=t.value;S.demoExpiryConsumed=false;rerenderKeepScroll();return;}
   if(operationLocked())return;
   if(t.dataset.act==='module-input'){
     const id=t.dataset.v; S.sel[id].on=t.checked;
@@ -2632,6 +2679,13 @@ if(typeof window!=='undefined' && window.addEventListener) window.addEventListen
 try{const version=store()?.getItem(CATALOG_KEY);if(['2026-11-10-v1','2026-11-10-v1-demo2'].includes(version))SCHEMA.version=version;}catch{}
 {const d=loadDraft();if(d){Object.assign(S,d);showToast('Восстановили оформление');}else if(window.location.hash==='#config'){S.step='config';}}
 {const op=loadOperation();if(op){S.operation=op;if(operationLocked(op)||['result','done'].includes(history.state?.step)){S.step=op.file==='ready'?'done':'result';scheduleOperation();}}}
+const scenarioLink=new URL(location.href);
+const linkedScenario=scenarioLink.searchParams.get('scenario');
+if(ADDRESS_REFUSAL_SCENARIOS.some(([id])=>id===linkedScenario)){
+  if(!operationLocked()){S.demoScenario=linkedScenario;S.demoPanel=true;}
+  scenarioLink.searchParams.delete('scenario');
+  history.replaceState(history.state,'',scenarioLink.href);
+}
 render();
 document.documentElement.lang = "ru";
 </script>

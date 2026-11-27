@@ -1989,9 +1989,292 @@ function sfaCheckout(){
 /* ═══════════ ЧЕРНОВИК ══════════════════════════════════════════
    Оформление переживает перезагрузку и «назад» браузера. Только вкладка
    (sessionStorage); согласие и подпись после восстановления даются заново. */
-const DRAFT_KEY = 'alfa360-draft';
+/* Direct entries into the existing, entirely simulated product. Call only after
+   the host selected the isolated demo store and installed its event handlers. */
+const handbookModules = new Map([
+  ['config', null], ['property', 'prop'], ['rental', 'prop'], ['address', 'prop'],
+  ['address-refused-property', 'prop'], ['address-refused-package', 'prop'],
+  ['dms', 'dms'], ['liability', 'liability'],
+  ['ownership-required', 'prop'], ['address-no-match', 'prop'],
+  ['address-selected', 'prop'], ['liability-alone', 'liability'],
+  ['config-empty', null], ['config-minimum', 'prop'], ['property-amount', 'prop'],
+]);
+const handbookPanels = new Map([
+  ['package-details', 'terms'], ['property-details', 'prop'],
+  ['dms-details', 'dms'], ['liability-details', 'liability'],
+]);
+const handbookResults = new Map([
+  // Each number is the count of native transitions after signature creation.
+  ['sign-pending', ['success', 0]], ['sign-failed', ['sign-failed', 1]],
+  ['payment-pending', ['success', 1]], ['payment-unknown', ['payment-unknown', 2]],
+  ['payment-failed', ['payment-failed', 2]], ['issue-pending', ['success', 2]],
+  ['issue-failed', ['issue-failed', 3]], ['file-preparing', ['file-preparing', 3]],
+  ['file-failed', ['file-failed', 4]], ['done', ['success', 4]],
+  ['policy-issued', ['success', 4]], ['reconciliation', ['success', 4]],
+]);
+const handbookSfaOnly = new Set(['paper', 'paper-consent', 'reconciliation', 'commission']);
+const handbookScreens = new Set([
+  ...handbookModules.keys(), ...handbookPanels.keys(), ...handbookResults.keys(),
+  'entry', 'address-refused-liability', 'data', 'staff-list', 'staff-add',
+  'staff-edit', 'staff-errors', 'staff-delete', 'staff-less', 'staff-more',
+  'checkout', 'policy-preview', 'consent', 'code', 'code-wrong', 'code-expired',
+  'code-locked', 'paper', 'paper-consent', 'draft', 'version-changed', 'manager',
+  'manager-failed', 'manager-success',
+  'liability-address', 'staff-empty', 'staff-duplicate', 'staff-age', 'email-invalid',
+  'consent-required', 'code-help', 'commission',
+  'address-corrected', 'address-dms-only', 'account-error', 'staff-limit',
+  'staff-pending', 'agree-current',
+]);
+
+function validHandbookScreen(screen, channel) {
+  return handbookScreens.has(screen) && (channel === 'nib' || channel === 'sfa')
+    && (channel === 'sfa' || !handbookSfaOnly.has(screen));
+}
+
+function readHandbookScreen(params) {
+  if (!params || typeof params.getAll !== 'function') return null;
+  const screens = params.getAll('screen');
+  const channels = params.getAll('channel');
+  if (screens.length !== 1 || channels.length > 1) return null;
+  const screen = screens[0];
+  const channel = channels.length ? channels[0] : 'nib';
+  return validHandbookScreen(screen, channel) ? { screen, channel } : null;
+}
+
+function handbookAgree() {
+  S.agreed = true;
+  S.agreedFor = quoteKey();
+}
+
+function handbookOperation(screen) {
+  const [scenario, count] = handbookResults.get(screen);
+  S.demoScenario = scenario;
+  handbookAgree();
+  const op = newMockOperation(snapshotConfiguration(), scenario);
+  for (let index = 0; index < count; index++) advanceMockOperation(op);
+  S.operation = op;
+  if (['sign-pending', 'payment-pending', 'issue-pending'].includes(screen)) handbookPausedOperation = op.id;
+  S.signed = op.signature === 'confirmed';
+  S.signError = op.signature === 'failed';
+  if (op.issuance === 'issued') S.completedKey = op.snapshot.key;
+  S.step = op.file === 'ready' ? 'done' : 'result';
+  if (screen === 'policy-issued') S.panel = 'doc:policy';
+  persistOperation();
+}
+
+function handbookStaff(screen) {
+  S.step = 'details';
+  if (screen === 'staff-empty') {
+    S.staff = [];
+    S.staffListStarted = false;
+    S.showErrorsDetails = true;
+  }
+  if (screen === 'staff-list') S.estimateEmployees = S.staff.length;
+  if (screen === 'staff-limit' || screen === 'account-error') {
+    const names = ['Анна','Вера','Елена','Ирина','Лилия','Марина','Нина','Ольга','Полина','Юлия'];
+    const example = S.staff[0];
+    S.staff = names.map((name, index) => ({
+      ...example, fio: 'Примерова ' + name + ' Ивановна', email: 'employee' + (index + 1) + '@example.com',
+    }));
+    S.estimateEmployees = S.staff.length;
+    if (screen === 'account-error') {
+      applyPreset('max');
+      S.payAccount = 1;
+      S.showErrorsDetails = true;
+    }
+  }
+  if (screen === 'staff-pending') {
+    S.staffEdit = 'new';
+    S.staffDraft = { fio: 'Примерова Анна', dob: '', phone: '', email: '' };
+    keepStaffDraft();
+    S.staffEdit = null;
+    S.staffDraft = null;
+    render();
+    app.querySelector('[data-act="staff-add"]').click();
+  }
+  if (screen === 'staff-less' || screen === 'staff-more') S.mismatch = true;
+  if (screen === 'staff-delete') S.staffDelete = 0;
+  if (screen === 'staff-edit') {
+    S.staffEdit = 0;
+    S.staffDraft = { ...S.staff[0] };
+  }
+  if (screen === 'staff-add' || screen === 'staff-errors') {
+    S.staffEdit = 'new';
+    S.staffDraft = { fio: '', dob: '', phone: '', email: '' };
+    if (screen === 'staff-errors') S.staffErr = staffErrors(S.staffDraft);
+  }
+  if (screen === 'staff-duplicate' || screen === 'staff-age') {
+    S.staffEdit = screen === 'staff-duplicate' ? 'new' : 0;
+    S.staffDraft = { ...S.staff[0] };
+    if (screen === 'staff-age') S.staffDraft.dob = '10.10.' + (new Date().getFullYear() - 13);
+    // Both the identity check and the age check belong to the form submit handler.
+    render();
+    app.querySelector('[data-act="staff-save"]').click();
+  }
+}
+
+function handbookSigning(screen) {
+  if (screen === 'paper' || screen === 'paper-consent') S.signway = 'paper';
+  handbookAgree();
+  if (screen === 'paper-consent') {
+    S.paperPrepared = true;
+    S.consent = true;
+  }
+  if (!screen.startsWith('code')) return;
+  S.signing = true;
+  startCode(true);
+  if (screen === 'code-help') S.codeHelp = true;
+  if (screen === 'code-wrong') {
+    S.codeTries = 2;
+    S.codeWrong = true;
+  }
+  if (screen === 'code-locked') {
+    S.codeTries = 0;
+    S.codeLeft = 0;
+    S.codeSentAt -= 30000;
+  }
+}
+
+function handbookDraft(screen) {
+  S.step = 'details';
+  saveDraft();
+  if (screen === 'draft') {
+    S.step = 'showcase';
+    return;
+  }
+  // Exercise the product's version-migration path on this fresh fixture only.
+  const draft = JSON.parse(store().getItem(DRAFT_KEY));
+  draft.productVersion = 'handbook-previous';
+  store().setItem(DRAFT_KEY, JSON.stringify(draft));
+  Object.assign(S, loadDraft());
+}
+
+function handbookFocus(screen) {
+  if (screen === 'reconciliation' || screen === 'commission') {
+    const details = screen === 'commission' ? app.querySelector('.rail details.module-coverage')
+      : app.querySelector('[data-act="export-register"]').closest('details');
+    details.open = true;
+    details.scrollIntoView({ block: 'center' });
+    return;
+  }
+  if (layer()) return;
+  const targets = {
+    entry: S.channel === 'nib' ? '[data-act="package-open"]' : '#sfa-reco-title',
+    config: '#module-toggle-prop', property: '#module-toggle-prop', rental: '[data-act="remove-property"]',
+    address: '#address-query', 'address-refused-property': '#address-error',
+    'address-refused-package': '#address-error', 'address-refused-liability': '#address-error',
+    dms: '#module-toggle-dms', liability: '#module-toggle-liability', 'staff-list': '.staff',
+    paper: '#signway-label', 'version-changed': '.note[role="status"]', draft: '[data-act="draft-resume"]',
+    'ownership-required': '#property-ownership-sub', 'address-no-match': '#address-query',
+    'address-selected': '#address-query', 'liability-alone': '#module-toggle-liability',
+    'liability-address': '#address-query', 'staff-empty': '.staff__empty',
+    'email-invalid': '#pay-mail', 'consent-required': '[data-act="agree"]',
+    'config-empty': '#module-toggle-prop', 'config-minimum': '.flow__note',
+    'property-amount': '#sum-prop-build', 'address-corrected': '#address-hint',
+    'address-dms-only': '.note[role="status"]', 'account-error': '#pay-acc-err',
+    'staff-limit': '[data-act="manager-request"]', 'agree-current': '[data-act="agree"]',
+  };
+  if (targets[screen]) app.querySelector(targets[screen])?.scrollIntoView({ block: 'center' });
+}
+
+function openHandbookScreen(entry) {
+  if (!entry || !validHandbookScreen(entry.screen, entry.channel)) return false;
+  const { screen, channel } = entry;
+  S = structuredClone(START);
+  S.channel = channel;
+  if (screen !== 'entry') {
+    let demo = screen === 'staff-list' ? 'staff-more' : screen;
+    if (screen === 'address-corrected' || screen === 'address-dms-only') demo = 'address-refused-package';
+    S.demoScenario = DEMO_SCENARIOS.some(([key]) => key === demo) ? demo : 'success';
+    openDemoExample();
+    if (handbookResults.has(screen)) handbookOperation(screen);
+    else if (handbookModules.has(screen)) {
+      S.step = 'config';
+      S.expandedModule = handbookModules.get(screen);
+      if (screen === 'address') inputAddress('Примерск Тестовая');
+      if (screen === 'address-no-match') inputAddress('Примерск Несуществующая');
+      if (screen === 'config-empty') {
+        SCHEMA.sections.forEach(section => { S.sel[section.id].on = false; });
+        S.showErrors = true;
+      }
+      if (screen === 'config-minimum') applyPreset('base');
+      if (screen === 'property-amount') {
+        S.sel.prop.sums.build = sec('prop').objects.find(item => item.id === 'build').min / 2;
+        S.showErrors = true;
+      }
+      if (screen === 'ownership-required') {
+        S.propertyOwnership = '';
+        S.showErrors = true;
+      }
+      if (screen === 'liability-alone') {
+        S.sel.prop.on = false;
+        S.sel.dms.on = false;
+        S.showErrors = true;
+      }
+    } else if (handbookPanels.has(screen)) {
+      S.step = 'config';
+      S.panel = handbookPanels.get(screen);
+    } else if (screen === 'data' || screen === 'account-error' || screen.startsWith('staff-')) handbookStaff(screen);
+    else if (screen === 'address-corrected') {
+      inputAddress('Примерск Тестовая 1');
+      chooseAddress(0);
+    }
+    else if (screen === 'address-dms-only') app.querySelector('[data-act="address-dms"]').click();
+    else if (screen === 'liability-address') {
+      S.step = 'details';
+      S.sel.prop.on = false;
+      S.propertyOwnership = '';
+      inputAddress('');
+      S.showErrorsDetails = true;
+    }
+    else if (screen.startsWith('code') || screen.startsWith('paper')) handbookSigning(screen);
+    else if (screen === 'draft' || screen === 'version-changed') handbookDraft(screen);
+    else if (screen.startsWith('manager')) {
+      S.step = 'config';
+      S.managerReq = true;
+      S.managerState = screen === 'manager-failed' ? 'failed' : screen === 'manager-success' ? 'success' : 'idle';
+      S.managerRetried = screen === 'manager-failed';
+    } else if (screen === 'email-invalid' || screen === 'consent-required') {
+      if (screen === 'email-invalid') {
+        S.payMail = 'policy-example';
+        handbookAgree();
+      }
+      render();
+      app.querySelector('[data-act="start-sign"]').click();
+    } else if (screen === 'agree-current') handbookAgree();
+    else if (screen === 'policy-preview') S.panel = 'doc:policy';
+    else if (screen === 'consent') S.consent = true;
+    // Checkout and the liability-only address refusal are complete native fixtures.
+  }
+  render();
+  handbookFocus(screen);
+  return true;
+}
+
+// A named screen runs with its own demonstration draft, catalog and operation.
+const handbookEntry = typeof location === "undefined" ? null : readHandbookScreen(new URL(location.href).searchParams);
+const handbookPrefix = handbookEntry ? 'handbook:' + handbookEntry.channel + ':' + handbookEntry.screen + ':' : '';
+let seedingHandbookScreen = false;
+let handbookPausedOperation = null;
+// A blocked session store still permits navigation through this demonstration tab.
+const handbookMemory = new Map();
+const handbookMemoryStore = {
+  getItem(key) { return handbookMemory.get(key) ?? null; },
+  setItem(key, value) { handbookMemory.set(key, String(value)); },
+  removeItem(key) { handbookMemory.delete(key); }
+};
+function handbookStore() {
+  try {
+    const key = handbookPrefix + 'storage-check';
+    sessionStorage.setItem(key, '1');
+    sessionStorage.removeItem(key);
+    return sessionStorage;
+  } catch { return handbookMemoryStore; }
+}
+const directEntryStore = handbookEntry ? handbookStore() : null;
+const DRAFT_KEY = handbookPrefix + 'alfa360-draft';
 const DRAFT_FIELDS = ['channel','step','flow','singleModule','sel','staff','estimateEmployees','staffListStarted','staffPending','addresses','propertyOwnership','productVersion','payAccount','payMail','signway'];
-const store = () => { try { return typeof sessionStorage!=='undefined' ? sessionStorage : null; } catch { return null; } };
+const store = () => { if (directEntryStore) return directEntryStore; try { return typeof sessionStorage!=='undefined' ? sessionStorage : null; } catch { return null; } };
 function loadDraft(){
   try {
     const d=JSON.parse(store()?.getItem(DRAFT_KEY) || 'null');
@@ -2046,6 +2329,7 @@ function elPresetNote(){
 /* История браузера: каждый шаг — запись, «назад» браузера совпадает с кнопкой «Назад» */
 let histIdx = 0;
 function syncHistory(){
+  if(seedingHandbookScreen) return;
   try {
     if(typeof history==='undefined' || !history.pushState) return;
     if(!history.state || history.state.i==null){histIdx=0;history.replaceState({step:S.step,i:0},'');}
@@ -2069,7 +2353,7 @@ const VIEWS = {
 const FLOW = ['showcase','config','details','checkout','result','done'];
 /* v1.3: screen behavior and explicitly simulated operations. No external payment/signature calls. */
 const DEMO_SCENARIOS=[['success','Оформление без ошибок'],['staff-less','Сотрудников меньше оценки'],['staff-more','Сотрудников больше оценки'],['rental','Помещение в аренде'],...ADDRESS_REFUSAL_SCENARIOS,['code-expired','Код подписи истёк'],['sign-failed','Ошибка подтверждения подписи'],['payment-unknown','Оплата: результат неизвестен'],['payment-failed','Оплата не выполнена'],['issue-failed','Оформление требует проверки'],['file-preparing','Полис оформлен, файл готовится'],['file-failed','Не удалось получить файл'],['manager-failed','Ошибка заявки менеджеру']];
-const OP_KEY='alfa360-operation-v13', CATALOG_KEY='alfa360-catalog-demo';
+const OP_KEY=handbookPrefix+'alfa360-operation-v13', CATALOG_KEY=handbookPrefix+'alfa360-catalog-demo';
 function localBusinessDate(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());return ['year','month','day'].map(t=>parts.find(p=>p.type===t).value).join('-');}
 let operationSerial=0, operationTimer=null, priceTimer=null, priceSerial=0, managerTimer=null, managerSerial=0;
 const staffMismatchKey=()=>JSON.stringify({estimate:S.estimateEmployees,count:EMPN(),price:calc().premium,selection:S.sel});
@@ -2188,6 +2472,8 @@ function elOperationResult(){
  else if(op.file==='preparing'){title='Полис оформлен';text='Полис оформлен. Файл ещё готовится';label='Проверить готовность файла';}
  else if(op.file==='failed'){title='Не удалось получить файл полиса';text='Полис оформлен. Повторите получение файла; оплачивать заново не нужно';label='Получить файл повторно';}
  else {title='Полис оформлен';text=`Полис оформлен. Защита действует с ${new Intl.DateTimeFormat('ru-RU').format(new Date(op.paymentDate+'T12:00:00'))}`;action='doc';label='Открыть полис';}
+ // The user can study a linked waiting state until they choose to continue.
+ if(busy && handbookPausedOperation === op.id){busy=false;label='Продолжить демонстрацию';}
  return `<div class="done"><section class="done__card" aria-live="polite" aria-atomic="true"><div class="status status--24">Демонстрация · деньги не списываются</div><h1 class="t-h2">${title}</h1><p>${text}</p><div class="actions"><button type="button" class="btn btn--48 ${PRI()}" data-act="${action}" data-v="policy" ${busy?'disabled aria-busy="true"':''}>${busy?'Ожидаем результат…':label}</button>${!operationLocked()?`<button class="btn btn--48 btn--secondary" data-act="new-quote">${S.channel==='sfa'?'К продуктам клиента':'К страховкам'}</button>`:''}</div><p class="t-sm sec">Это демонстрация сценария. Полис остаётся макетом, реальные подпись, платёж и страховая защита не возникают.</p></section><section class="block"><h2 class="t-h3">Состав и стоимость</h2>${priceSummary(op.snapshot.calc,op.snapshot.sel,op.snapshot.catalog)}</section>${elReconciliation()}</div>`;
 }
 function nibDone(){return nibShell(`<div class="page">${elOperationResult()}</div>`);}
@@ -2363,7 +2649,7 @@ app.addEventListener('click', e=>{
   if(act==='demo-example'){openDemoExample();return;}
   if(act==='demo-catalog'){if(operationLocked()){S.demoPanel=false;S.step='result';render();return;}SCHEMA.version=SCHEMA.version.endsWith('-demo2')?'2026-11-10-v1':'2026-11-10-v1-demo2';try{store()?.setItem(CATALOG_KEY,SCHEMA.version);}catch{}invalidateApproval();S.demoPanel=false;S.warn='Условия продукта обновились. Проверьте состав и новую стоимость до продолжения';S.step='config';queueReprice();render();return;}
   if(act==='paper-confirm-demo'){if(S.paperPrepared&&S.agreed&&S.agreedFor===quoteKey()&&checkoutReady()){S.consent=false;beginOperation();S.step='result';render();}return;}
-  if(act==='operation-check'){if(S.operation){checkMockOperation(S.operation);persistOperation();scheduleOperation();render();}return;}
+  if(act==='operation-check'){if(S.operation){handbookPausedOperation=null;checkMockOperation(S.operation);persistOperation();scheduleOperation();render();}return;}
   if(act==='operation-retry-sign'){if(operationLocked())return;S.step='checkout';S.signed=false;S.signBusy=false;S.signing=false;if(S.agreed&&S.agreedFor===quoteKey()){S.signing=true;startCode(true);}else S.agreeErr=true;render();if(!S.signing)app.querySelector('[data-act="agree"]')?.focus();return;}
   if(act==='operation-edit'){if(operationLocked())return;clearTimeout(operationTimer);S.operation=null;S.demoPaymentRetry=true;S.step='details';invalidateApproval();persistOperation();render();return;}
   if(act==='new-quote'){if(operationLocked())return;const channel=S.channel,scenario=S.demoScenario;clearTimeout(managerTimer);managerSerial++;clearTimeout(operationTimer);clearInterval(codeTimer);S=structuredClone(START);S.channel=channel;S.demoScenario=scenario;persistOperation();dropDraft();render();return;}
@@ -2676,17 +2962,27 @@ if(typeof window!=='undefined' && window.addEventListener) window.addEventListen
   render();window.scrollTo(0,0);if(problem) focusRouteProblem(problem);
 });
 /* Restore draft and operation after all handlers are installed. */
-try{const version=store()?.getItem(CATALOG_KEY);if(['2026-11-10-v1','2026-11-10-v1-demo2'].includes(version))SCHEMA.version=version;}catch{}
-{const d=loadDraft();if(d){Object.assign(S,d);showToast('Восстановили оформление');}else if(window.location.hash==='#config'){S.step='config';}}
-{const op=loadOperation();if(op){S.operation=op;if(operationLocked(op)||['result','done'].includes(history.state?.step)){S.step=op.file==='ready'?'done':'result';scheduleOperation();}}}
-const scenarioLink=new URL(location.href);
-const linkedScenario=scenarioLink.searchParams.get('scenario');
-if(ADDRESS_REFUSAL_SCENARIOS.some(([id])=>id===linkedScenario)){
-  if(!operationLocked()){S.demoScenario=linkedScenario;S.demoPanel=true;}
-  scenarioLink.searchParams.delete('scenario');
-  history.replaceState(history.state,'',scenarioLink.href);
+// A fresh link opens its exact screen. Later steps retain the standard draft and reload behavior.
+const continuingHandbookFlow = handbookEntry && location.hash && history.state?.i > 0;
+if (handbookEntry && !continuingHandbookFlow) {
+  try { for (const key of [DRAFT_KEY, OP_KEY, CATALOG_KEY]) store()?.removeItem(key); } catch {}
+  seedingHandbookScreen=true;
+  try { openHandbookScreen(handbookEntry); } finally { seedingHandbookScreen=false; }
+  histIdx=0;
+  history.replaceState({step:S.step,i:0},'');
+} else {
+  try{const version=store()?.getItem(CATALOG_KEY);if(['2026-11-10-v1','2026-11-10-v1-demo2'].includes(version))SCHEMA.version=version;}catch{}
+  {const d=loadDraft();if(d){Object.assign(S,d);showToast('Восстановили оформление');}else if(window.location.hash==='#config'){S.step='config';}}
+  {const op=loadOperation();if(op){S.operation=op;if(operationLocked(op)||['result','done'].includes(history.state?.step)){S.step=op.file==='ready'?'done':'result';scheduleOperation();}}}
+  const scenarioLink=new URL(location.href);
+  const linkedScenario=scenarioLink.searchParams.get('scenario');
+  if(ADDRESS_REFUSAL_SCENARIOS.some(([id])=>id===linkedScenario)){
+    if(!operationLocked()){S.demoScenario=linkedScenario;S.demoPanel=true;}
+    scenarioLink.searchParams.delete('scenario');
+    history.replaceState(history.state,'',scenarioLink.href);
+  }
+  render();
 }
-render();
 document.documentElement.lang = "ru";
 </script>
 

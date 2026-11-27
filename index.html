@@ -2023,7 +2023,7 @@ const handbookScreens = new Set([
   'liability-address', 'staff-empty', 'staff-duplicate', 'staff-age', 'email-invalid',
   'consent-required', 'code-help', 'commission',
   'address-corrected', 'address-dms-only', 'account-error', 'staff-limit',
-  'staff-pending', 'agree-current',
+  'staff-pending', 'agree-current', 'checkout-no-dms',
 ]);
 
 function validHandbookScreen(screen, channel) {
@@ -2215,6 +2215,13 @@ function openHandbookScreen(entry) {
       S.step = 'config';
       S.panel = handbookPanels.get(screen);
     } else if (screen === 'data' || screen === 'account-error' || screen.startsWith('staff-')) handbookStaff(screen);
+    else if (screen === 'checkout-no-dms') {
+      applyPreset('base');
+      S.staff = [];
+      S.staffListStarted = false;
+      S.estimateEmployees = 0;
+      S.step = 'checkout';
+    }
     else if (screen === 'address-corrected') {
       inputAddress('Примерск Тестовая 1');
       chooseAddress(0);
